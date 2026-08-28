@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A1422">
+<title>Pórtico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --tinta:#0A1422; --tinta-2:#0F1B33; --ouro:#C9A227; --ouro-2:#E4C86A;
+  --marfim:#F1EADA; --nevoa:#8FA0BC; --raio:2px;
+  --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1100px 620px at 50% -8%, #14243F 0%, rgba(20,36,63,0) 62%),
+    radial-gradient(900px 500px at 100% 100%, #101E38 0%, rgba(16,30,56,0) 60%),
+    var(--tinta);
+  min-height:100vh;color:var(--marfim);
+  font-family:"Cormorant Garamond",Georgia,serif;font-size:17px;-webkit-font-smoothing:antialiased;
+}
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.envoltorio{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 26px 90px}
+
+/* ---------- trilho superior ---------- */
+.rail{
+  display:flex;align-items:center;gap:16px;padding:22px 0 20px;
+  border-bottom:1px solid rgba(201,162,39,.22);position:sticky;top:0;z-index:20;
+  background:linear-gradient(to bottom,var(--tinta) 62%,rgba(10,20,34,.88) 100%);
+  backdrop-filter:blur(6px);
+}
+.marca{font-family:"Cinzel",serif;font-size:19px;letter-spacing:.28em;display:flex;align-items:center;gap:11px;white-space:nowrap}
+.marca i{color:var(--ouro);font-style:normal;font-size:13px;transform:translateY(-1px)}
+.abas{display:flex;gap:2px;border:1px solid rgba(143,160,188,.2);border-radius:var(--raio);padding:3px}
+.aba{
+  font-family:"Cinzel",serif;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+  background:none;border:none;color:var(--nevoa);padding:8px 15px;cursor:pointer;border-radius:1px;transition:.2s;
+}
+.aba:hover{color:var(--marfim)}
+.aba[aria-selected="true"]{background:rgba(201,162,39,.15);color:var(--ouro-2)}
+.aba .tot{font-family:var(--sans);font-size:9.5px;opacity:.7;margin-left:7px}
+.busca{flex:1;position:relative;min-width:120px}
+.busca input{
+  width:100%;background:rgba(255,255,255,.03);border:1px solid rgba(143,160,188,.2);
+  border-radius:var(--raio);color:var(--marfim);padding:10px 14px 10px 34px;
+  font-family:var(--sans);font-size:13px;outline:none;
+}
+.busca input::placeholder{color:rgba(143,160,188,.65)}
+.busca input:focus{border-color:rgba(201,162,39,.55);background:rgba(201,162,39,.05)}
+.busca svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.5}
+.btn{
+  font-family:"Cinzel",serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  background:transparent;color:var(--ouro-2);border:1px solid rgba(201,162,39,.45);
+  padding:10px 16px;border-radius:var(--raio);cursor:pointer;white-space:nowrap;transition:.2s;
+}
+.btn:hover{background:rgba(201,162,39,.12);border-color:var(--ouro)}
+.btn.solido{background:var(--ouro);color:#0A1422;border-color:var(--ouro);font-weight:600}
+.btn.solido:hover{background:var(--ouro-2)}
+.btn.mudo{border-color:rgba(143,160,188,.25);color:var(--nevoa)}
+.btn.mudo:hover{border-color:rgba(143,160,188,.5);background:rgba(143,160,188,.08);color:var(--marfim)}
+.icone-btn{
+  width:38px;height:38px;display:grid;place-items:center;background:transparent;
+  border:1px solid rgba(143,160,188,.22);border-radius:var(--raio);color:var(--nevoa);cursor:pointer;transition:.2s;flex:none;
+}
+.icone-btn:hover{color:var(--ouro-2);border-color:rgba(201,162,39,.5)}
+:focus-visible{outline:2px solid var(--ouro-2);outline-offset:2px}
+
+/* ---------- abertura ---------- */
+.abertura{position:relative;padding:74px 0 58px;text-align:center}
+.arco{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:min(720px,92%);height:230px;pointer-events:none;opacity:.55}
+.arco path,.arco line{fill:none;stroke:var(--ouro);stroke-width:1;stroke-dasharray:1400;stroke-dashoffset:1400;animation:tracar 2.4s ease-out .2s forwards}
+@keyframes tracar{to{stroke-dashoffset:0}}
+.sobrescrito{font-family:var(--sans);font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:rgba(143,160,188,.8);margin:0 0 20px}
+.abertura h1{font-family:"Cinzel",serif;font-weight:400;font-size:clamp(30px,5.2vw,50px);margin:0;line-height:1.18}
+.abertura h1 em{font-style:normal;color:var(--ouro-2)}
+.abertura p.lede{font-size:19px;color:var(--nevoa);margin:18px auto 0;max-width:44ch;font-style:italic}
+
+/* ---------- rótulos ---------- */
+.rotulo{display:flex;align-items:center;gap:16px;margin:0 0 24px}
+.rotulo h2{font-family:"Cinzel",serif;font-weight:500;font-size:13px;letter-spacing:.3em;text-transform:uppercase;margin:0;white-space:nowrap}
+.regua{flex:1;height:1px;background:linear-gradient(to right,rgba(201,162,39,.45),rgba(201,162,39,.05))}
+.nota{font-family:var(--sans);font-size:11px;letter-spacing:.14em;color:rgba(143,160,188,.75);text-transform:uppercase;white-space:nowrap}
+.ligacao{
+  background:none;border:none;font-family:var(--sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(143,160,188,.85);cursor:pointer;padding:6px 2px;border-bottom:1px solid transparent;white-space:nowrap;
+}
+.ligacao:hover{color:var(--ouro-2);border-bottom-color:rgba(201,162,39,.5)}
+.ligacao[aria-pressed="true"]{color:var(--ouro-2);border-bottom-color:var(--ouro)}
+
+/* ---------- placas ---------- */
+.grade{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.placa{
+  position:relative;background:linear-gradient(160deg,#101D36 0%,#0C1728 100%);
+  border:1px solid rgba(201,162,39,.28);border-radius:var(--raio);padding:30px 20px 22px;min-height:238px;
+  display:flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer;overflow:hidden;
+  transition:border-color .25s,transform .25s,box-shadow .25s;animation:subir .6s cubic-bezier(.2,.7,.3,1) both;
+}
+.placa:nth-child(1){animation-delay:.05s}
+.placa:nth-child(2){animation-delay:.12s}
+.placa:nth-child(3){animation-delay:.19s}
+.placa:nth-child(4){animation-delay:.26s}
+@keyframes subir{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.placa::before{content:"";position:absolute;inset:7px;border:1px solid rgba(201,162,39,.14);pointer-events:none}
+.placa:hover,.placa:focus-within{border-color:rgba(201,162,39,.75);transform:translateY(-3px);box-shadow:0 18px 40px -22px rgba(0,0,0,.9)}
+.marca-dagua{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-54%);font-family:"Cinzel",serif;
+  font-size:170px;line-height:1;color:var(--ouro);opacity:.055;pointer-events:none;user-select:none;transition:.3s;
+}
+.placa:hover .marca-dagua{opacity:.09}
+.ordinal{position:absolute;top:14px;left:16px;font-family:"Cinzel",serif;font-size:11px;letter-spacing:.14em;color:rgba(201,162,39,.6)}
+.brasao{
+  position:relative;width:62px;height:62px;border-radius:50%;display:grid;place-items:center;
+  border:1px solid rgba(201,162,39,.45);background:rgba(201,162,39,.06);margin-bottom:18px;flex:none;
+}
+.brasao img{width:32px;height:32px;border-radius:4px;position:absolute;background:#0F1B33;padding:2px}
+.brasao span{font-family:"Cinzel",serif;font-size:23px;color:var(--ouro-2)}
+.placa .nome{font-family:"Cinzel",serif;font-size:14px;letter-spacing:.16em;text-transform:uppercase;line-height:1.45;position:relative}
+.placa .dominio{font-family:var(--sans);font-size:10.5px;color:rgba(143,160,188,.7);margin-top:9px;position:relative;word-break:break-all}
+.placa .rodape{margin-top:auto;padding-top:16px;width:100%;border-top:1px solid rgba(201,162,39,.16);display:flex;align-items:center;justify-content:space-between;position:relative}
+.contagem{font-family:var(--sans);font-size:10px;letter-spacing:.12em;color:rgba(143,160,188,.6);text-transform:uppercase}
+.ferramentas{display:flex;gap:2px}
+.ferramenta{
+  width:26px;height:24px;display:grid;place-items:center;background:none;border:none;
+  color:rgba(143,160,188,.55);cursor:pointer;border-radius:2px;font-size:12px;line-height:1;transition:.18s;font-family:var(--sans);
+}
+.ferramenta:hover{color:var(--ouro-2);background:rgba(201,162,39,.12)}
+.pendente{
+  position:absolute;top:12px;right:14px;font-family:var(--sans);font-size:9px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ouro-2);border:1px dashed rgba(201,162,39,.5);padding:3px 7px;
+}
+.vazia{border-style:dashed;border-color:rgba(143,160,188,.28);background:rgba(255,255,255,.012);color:var(--nevoa);justify-content:center;gap:12px}
+.vazia:hover{border-color:rgba(201,162,39,.5)}
+.vazia .sinal{font-family:"Cinzel",serif;font-size:30px;color:rgba(201,162,39,.6)}
+.vazia p{margin:0;font-size:15px;font-style:italic;max-width:20ch}
+
+/* ---------- carrossel ---------- */
+.biblioteca{margin-top:64px}
+.trilho{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x proximity;padding:4px 2px 18px;scrollbar-width:thin;scrollbar-color:rgba(201,162,39,.35) transparent}
+.trilho::-webkit-scrollbar{height:5px}
+.trilho::-webkit-scrollbar-thumb{background:rgba(201,162,39,.35);border-radius:3px}
+.trilho::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
+.medalha{
+  flex:none;width:136px;scroll-snap-align:start;background:rgba(255,255,255,.022);
+  border:1px solid rgba(143,160,188,.16);border-radius:var(--raio);padding:20px 12px 12px;
+  display:flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer;transition:.22s;position:relative;
+}
+.medalha:hover,.medalha:focus-within{border-color:rgba(201,162,39,.55);background:rgba(201,162,39,.05);transform:translateY(-2px)}
+.medalha .brasao{width:46px;height:46px;margin-bottom:13px}
+.medalha .brasao img{width:24px;height:24px}
+.medalha .brasao span{font-size:17px}
+.medalha .nome{font-family:"Cinzel",serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;line-height:1.5}
+.medalha .contagem{margin-top:7px}
+.medalha .ferramentas{margin-top:11px;padding-top:9px;border-top:1px solid rgba(143,160,188,.14);width:100%;justify-content:center}
+.medalha .pendente{top:8px;right:8px;font-size:8px;padding:2px 5px}
+.sem-resultado{font-style:italic;color:var(--nevoa);padding:26px 2px;font-size:17px}
+
+/* ---------- cadastro ---------- */
+.oculto{display:none!important}
+.cadastro{padding-top:44px}
+.painel{border:1px solid rgba(201,162,39,.25);border-radius:var(--raio);padding:26px 26px 22px;background:rgba(255,255,255,.018);margin-bottom:40px}
+.painel h3{font-family:"Cinzel",serif;font-weight:500;font-size:12px;letter-spacing:.24em;text-transform:uppercase;margin:0 0 6px}
+.painel p.exp{margin:0 0 20px;color:var(--nevoa);font-style:italic;font-size:16px}
+.par{display:grid;grid-template-columns:1.4fr 1fr auto;gap:12px;align-items:end}
+.campo label{display:block;font-family:var(--sans);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(143,160,188,.85);margin-bottom:7px}
+.campo input,.campo textarea{
+  width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(143,160,188,.22);border-radius:var(--raio);
+  color:var(--marfim);padding:11px 13px;font-family:var(--sans);font-size:14px;outline:none;
+}
+.campo textarea{min-height:132px;resize:vertical;line-height:1.7;font-size:13px}
+.campo input:focus,.campo textarea:focus{border-color:rgba(201,162,39,.6);background:rgba(201,162,39,.05)}
+.campo .dica{font-family:var(--sans);font-size:11px;color:rgba(143,160,188,.6);margin-top:7px;line-height:1.6}
+.alternar-lote{margin-top:16px}
+.lote{margin-top:22px;padding-top:22px;border-top:1px solid rgba(201,162,39,.16)}
+
+.livro{border:1px solid rgba(143,160,188,.16);border-radius:var(--raio);overflow:hidden}
+.cabeca,.linha{display:grid;grid-template-columns:52px minmax(140px,1.1fr) minmax(180px,1.7fr) 92px 132px;gap:10px;align-items:center;padding:0 14px}
+.cabeca{
+  height:42px;background:rgba(201,162,39,.07);border-bottom:1px solid rgba(201,162,39,.22);
+  font-family:"Cinzel",serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(201,162,39,.85);
+}
+.linha{min-height:58px;border-bottom:1px solid rgba(143,160,188,.1);transition:background .18s}
+.linha:last-child{border-bottom:none}
+.linha:hover{background:rgba(255,255,255,.022)}
+.linha .brasao{width:34px;height:34px;margin:0}
+.linha .brasao img{width:19px;height:19px}
+.linha .brasao span{font-size:14px}
+.linha input{
+  width:100%;background:transparent;border:1px solid transparent;border-radius:var(--raio);color:var(--marfim);
+  padding:8px 9px;font-family:var(--sans);font-size:13px;outline:none;
+}
+.linha input.nome-in{font-family:"Cinzel",serif;font-size:12px;letter-spacing:.08em}
+.linha input:hover{border-color:rgba(143,160,188,.2)}
+.linha input:focus{border-color:rgba(201,162,39,.6);background:rgba(201,162,39,.06)}
+.linha input::placeholder{color:rgba(224,138,122,.7)}
+.acoes-linha{display:flex;gap:4px;justify-content:flex-end}
+.acoes-linha .ferramenta{width:30px;height:28px;font-size:13px}
+.no-arco{font-family:var(--sans);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro-2);border:1px solid rgba(201,162,39,.45);padding:3px 7px;border-radius:2px;white-space:nowrap}
+.livro-vazio{padding:44px 20px;text-align:center;color:var(--nevoa);font-style:italic}
+
+/* ---------- diálogos ---------- */
+dialog{border:1px solid rgba(201,162,39,.35);border-radius:var(--raio);padding:0;background:linear-gradient(160deg,#111E38,#0B1526);color:var(--marfim);width:min(460px,92vw);box-shadow:0 40px 90px -30px #000}
+dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
+.folha{padding:30px 30px 26px}
+.folha h3{font-family:"Cinzel",serif;font-weight:500;font-size:15px;letter-spacing:.2em;text-transform:uppercase;margin:0 0 6px}
+.folha .sub{color:var(--nevoa);font-style:italic;margin:0 0 24px;font-size:16px}
+.linha-acao{display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:26px;flex-wrap:wrap}
+.perigo{color:#E08A7A;border-color:rgba(224,138,122,.4)}
+.perigo:hover{background:rgba(224,138,122,.12);border-color:#E08A7A}
+.lista-ajustes{display:flex;flex-direction:column;gap:10px}
+.lista-ajustes button{width:100%;text-align:left;padding:14px 16px;font-size:11px}
+.aviso{font-family:var(--sans);font-size:11.5px;line-height:1.6;color:rgba(143,160,188,.8);border-left:1px solid rgba(201,162,39,.4);padding-left:12px;margin-top:22px}
+
+.rodape-pagina{
+  margin-top:72px;padding-top:22px;border-top:1px solid rgba(201,162,39,.16);
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  font-family:var(--sans);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:rgba(143,160,188,.55);
+}
+
+@media(max-width:980px){
+  .grade{grid-template-columns:repeat(2,1fr)}
+  .marca-dagua{font-size:130px}
+  .cabeca{display:none}
+  .linha{grid-template-columns:44px 1fr;grid-template-areas:"br nome" "br url" ". meta";row-gap:6px;padding:14px}
+  .linha .brasao{grid-area:br}
+  .linha .cel-nome{grid-area:nome}
+  .linha .cel-url{grid-area:url}
+  .linha .cel-cont{display:none}
+  .linha .acoes-linha{grid-area:meta;justify-content:flex-start}
+  .par{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .envoltorio{padding:0 16px 70px}
+  .rail{flex-wrap:wrap;gap:10px}
+  .marca{font-size:16px;letter-spacing:.22em}
+  .busca{order:4;flex-basis:100%}
+  .abertura{padding:48px 0 42px}
+  .grade{gap:12px}
+  .placa{padding:24px 12px 16px;min-height:196px}
+  .placa .dominio{display:none}
+  .brasao{width:52px;height:52px;margin-bottom:14px}
+  .painel{padding:20px 16px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .arco path,.arco line{stroke-dashoffset:0}
+}
+</style>
+</head>
+<body>
+<div class="envoltorio">
+
+  <header class="rail">
+    <div class="marca"><i>✦</i>PÓRTICO</div>
+    <div class="abas" role="tablist">
+      <button class="aba" id="aba-portico" role="tab" aria-selected="true">Pórtico</button>
+      <button class="aba" id="aba-cadastro" role="tab" aria-selected="false">Cadastro<span class="tot" id="tot-aba">0</span></button>
+    </div>
+    <div class="busca">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8FA0BC" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="busca" type="search" placeholder="Buscar entre seus apps" autocomplete="off" aria-label="Buscar entre seus apps">
+    </div>
+    <button class="icone-btn" id="btn-ajustes" aria-label="Ajustes" title="Ajustes">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+    </button>
+  </header>
+
+  <!-- ================= PÓRTICO ================= -->
+  <main id="vista-portico">
+    <section class="abertura">
+      <svg class="arco" viewBox="0 0 720 230" aria-hidden="true">
+        <path d="M40 230 L40 130 A320 320 0 0 1 680 130 L680 230"/>
+        <path d="M64 230 L64 132 A296 296 0 0 1 656 132 L656 230" opacity=".45"/>
+        <line x1="40" y1="196" x2="680" y2="196" opacity=".3"/>
+      </svg>
+      <p class="sobrescrito" id="data-hoje"></p>
+      <h1>Tudo o que você construiu,<br><em>atrás de uma só porta.</em></h1>
+      <p class="lede">Quatro obras sob o arco, o restante na biblioteca. Troque a ordem conforme o dia pedir.</p>
+    </section>
+
+    <section>
+      <div class="rotulo">
+        <h2>Sob o arco</h2><span class="regua"></span><span class="nota" id="nota-destaque"></span>
+      </div>
+      <div class="grade" id="grade"></div>
+    </section>
+
+    <section class="biblioteca">
+      <div class="rotulo">
+        <h2>A biblioteca</h2><span class="regua"></span>
+        <button class="ligacao" id="btn-ordenar" aria-pressed="false">Ordenar pelos mais abertos</button>
+      </div>
+      <div class="trilho" id="trilho"></div>
+    </section>
+  </main>
+
+  <!-- ================= CADASTRO ================= -->
+  <main id="vista-cadastro" class="cadastro oculto">
+    <div class="painel">
+      <h3>Cadastrar app</h3>
+      <p class="exp">Cada app cadastrado entra na biblioteca na hora e vira mais um item do carrossel.</p>
+      <div class="par">
+        <div class="campo">
+          <label for="novo-url">Endereço</label>
+          <input id="novo-url" type="url" inputmode="url" placeholder="meusite.github.io/ktl" spellcheck="false">
+        </div>
+        <div class="campo">
+          <label for="novo-nome">Nome</label>
+          <input id="novo-nome" type="text" placeholder="KTL" maxlength="34">
+        </div>
+        <button class="btn solido" id="btn-cadastrar" style="height:43px">Cadastrar</button>
+      </div>
+      <p class="dica" style="font-family:var(--sans);font-size:11px;color:rgba(143,160,188,.6);margin-top:10px">Pode colar sem o https:// — o ícone vem do próprio site. Sem nome, o Pórtico usa o domínio.</p>
+
+      <div class="alternar-lote">
+        <button class="ligacao" id="btn-abrir-lote" aria-pressed="false">Cadastrar vários de uma vez</button>
+      </div>
+      <div class="lote oculto" id="bloco-lote">
+        <div class="campo">
+          <label for="area-lote">Uma linha por app</label>
+          <textarea id="area-lote" spellcheck="false" placeholder="KTL | meusite.github.io/ktl&#10;ANAGNOSIS | meusite.github.io/anagnosis&#10;meusite.github.io/scriba"></textarea>
+          <p class="dica">Formato: <strong>Nome | endereço</strong>. Se a linha tiver só o endereço, o nome sai do domínio. Endereços repetidos são ignorados.</p>
+        </div>
+        <div class="linha-acao" style="margin-top:14px">
+          <button class="btn mudo" id="btn-cancelar-lote">Fechar</button>
+          <button class="btn solido" id="btn-processar-lote">Cadastrar lista</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="rotulo">
+      <h2>Apps cadastrados</h2><span class="regua"></span><span class="nota" id="nota-cadastro"></span>
+    </div>
+    <div class="livro">
+      <div class="cabeca"><span></span><span>Nome</span><span>Endereço</span><span>Aberturas</span><span></span></div>
+      <div id="livro-corpo"></div>
+    </div>
+    <p class="dica" style="font-family:var(--sans);font-size:11px;color:rgba(143,160,188,.55);margin-top:14px">Edite nome e endereço direto na linha — o Pórtico salva ao sair do campo.</p>
+  </main>
+
+  <footer class="rodape-pagina">
+    <span id="resumo"></span>
+    <span>Pórtico · uso pessoal</span>
+  </footer>
+</div>
+
+<dialog id="dlg-ajustes">
+  <div class="folha">
+    <h3>Ajustes</h3>
+    <p class="sub">Sua lista fica guardada neste navegador.</p>
+    <div class="lista-ajustes">
+      <button class="btn mudo" id="btn-exportar">Exportar lista (arquivo .json)</button>
+      <button class="btn mudo" id="btn-importar">Importar lista de um arquivo</button>
+      <button class="btn mudo perigo" id="btn-limpar">Apagar tudo e recomeçar</button>
+    </div>
+    <p class="aviso">Ao publicar este arquivo no GitHub Pages, exporte a lista aqui e importe de volta lá — cada endereço guarda os dados separadamente.</p>
+    <div class="linha-acao"><button class="btn solido" id="btn-fechar-ajustes">Fechar</button></div>
+  </div>
+  <input type="file" id="arquivo-importar" accept="application/json,.json" hidden>
+</dialog>
+
+<script>
+/* ============ armazenamento ============ */
+const CHAVE = 'portico:v1';
+const cofre = {
+  async ler(){
+    try{ if(window.storage){ const r = await window.storage.get(CHAVE); if(r && r.value) return r.value; } }catch(e){}
+    try{ return localStorage.getItem(CHAVE); }catch(e){ return null; }
+  },
+  async gravar(txt){
+    try{ if(window.storage){ await window.storage.set(CHAVE, txt); return; } }catch(e){}
+    try{ localStorage.setItem(CHAVE, txt); }catch(e){}
+  }
+};
+
+/* ============ estado ============ */
+let estado = { apps:[], destaque:[], ordenarPorUso:false };
+let filtro = '';
+
+const novoId = () => 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+function normalizarUrl(u){
+  u = (u||'').trim();
+  if(!u) return '';
+  if(!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  return u;
+}
+function dominio(url){ try{ return new URL(url).hostname.replace(/^www\./,''); }catch(e){ return ''; } }
+function favicon(url){ const h = dominio(url); return h ? 'https://www.google.com/s2/favicons?domain=' + h + '&sz=128' : ''; }
+const inicial = n => (n||'?').trim().charAt(0).toUpperCase();
+const romano = i => ['I','II','III','IV'][i] || '';
+const achar = id => estado.apps.find(a => a.id === id);
+const destacados = () => estado.destaque.map(achar).filter(Boolean);
+function guardados(){
+  let l = estado.apps.filter(a => !estado.destaque.includes(a.id));
+  if(estado.ordenarPorUso) l.sort((a,b) => b.aberturas - a.aberturas || a.nome.localeCompare(b.nome,'pt-BR'));
+  return l;
+}
+function passaFiltro(a){
+  if(!filtro) return true;
+  const t = filtro.toLowerCase();
+  return a.nome.toLowerCase().includes(t) || dominio(a.url).toLowerCase().includes(t);
+}
+function salvar(){ cofre.gravar(JSON.stringify(estado)); }
+async function carregar(){
+  const bruto = await cofre.ler();
+  if(!bruto) return;
+  try{
+    const d = JSON.parse(bruto);
+    if(!Array.isArray(d.apps)) return;
+    estado.apps = d.apps.map(a => ({
+      id: a.id || novoId(),
+      nome: String(a.nome || '').slice(0,40),
+      url: normalizarUrl(a.url || ''),
+      aberturas: Number(a.aberturas) || 0
+    }));
+    estado.destaque = Array.isArray(d.destaque) ? d.destaque.filter(id => estado.apps.some(a => a.id === id)).slice(0,4) : [];
+    estado.ordenarPorUso = !!d.ordenarPorUso;
+  }catch(e){}
+}
+
+/* ============ cadastro de apps ============ */
+function cadastrar(nome, url, silencioso){
+  url = normalizarUrl(url);
+  nome = (nome || '').trim();
+  if(!nome) nome = (dominio(url).split('.')[0] || 'Sem nome');
+  if(!url && !nome) return null;
+  if(url && estado.apps.some(a => a.url && a.url.toLowerCase() === url.toLowerCase())) return null;
+  const app = { id:novoId(), nome, url, aberturas:0 };
+  estado.apps.push(app);
+  if(estado.destaque.length < 4) estado.destaque.push(app.id);
+  if(!silencioso){ salvar(); desenhar(); }
+  return app;
+}
+function remover(id){
+  estado.apps = estado.apps.filter(a => a.id !== id);
+  estado.destaque = estado.destaque.filter(x => x !== id);
+  salvar(); desenhar();
+}
+function abrir(app){
+  if(!app.url){ irPara('cadastro'); const alvo = document.querySelector('[data-url-de="'+app.id+'"]'); if(alvo){ alvo.focus(); alvo.scrollIntoView({block:'center'}); } return; }
+  app.aberturas++; salvar(); desenhar();
+  window.open(app.url, '_blank', 'noopener');
+}
+function promover(id){
+  if(estado.destaque.includes(id)) return;
+  if(estado.destaque.length >= 4) estado.destaque.pop();
+  estado.destaque.push(id);
+  salvar(); desenhar();
+}
+function rebaixar(id){ estado.destaque = estado.destaque.filter(x => x !== id); salvar(); desenhar(); }
+function mover(id, passo){
+  const i = estado.destaque.indexOf(id), j = i + passo;
+  if(i < 0 || j < 0 || j >= estado.destaque.length) return;
+  [estado.destaque[i], estado.destaque[j]] = [estado.destaque[j], estado.destaque[i]];
+  salvar(); desenhar();
+}
+
+/* ============ navegação entre telas ============ */
+function irPara(vista){
+  const ehPortico = vista === 'portico';
+  document.getElementById('vista-portico').classList.toggle('oculto', !ehPortico);
+  document.getElementById('vista-cadastro').classList.toggle('oculto', ehPortico);
+  document.getElementById('aba-portico').setAttribute('aria-selected', String(ehPortico));
+  document.getElementById('aba-cadastro').setAttribute('aria-selected', String(!ehPortico));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.getElementById('aba-portico').addEventListener('click', () => irPara('portico'));
+document.getElementById('aba-cadastro').addEventListener('click', () => irPara('cadastro'));
+
+/* ============ formulário de cadastro ============ */
+const nUrl = document.getElementById('novo-url');
+const nNome = document.getElementById('novo-nome');
+document.getElementById('btn-cadastrar').addEventListener('click', () => {
+  const url = nUrl.value.trim(), nome = nNome.value.trim();
+  if(!url && !nome){ nUrl.focus(); nUrl.style.borderColor = 'rgba(224,138,122,.7)'; return; }
+  nUrl.style.borderColor = '';
+  const app = cadastrar(nome, url);
+  if(!app){ alert('Esse endereço já está cadastrado.'); return; }
+  nUrl.value = ''; nNome.value = ''; nUrl.focus();
+});
+[nUrl, nNome].forEach(c => c.addEventListener('keydown', e => { if(e.key === 'Enter') document.getElementById('btn-cadastrar').click(); }));
+
+/* ---- cadastro em lote ---- */
+const blocoLote = document.getElementById('bloco-lote');
+const btnAbrirLote = document.getElementById('btn-abrir-lote');
+btnAbrirLote.addEventListener('click', () => {
+  const aberto = blocoLote.classList.toggle('oculto') === false;
+  btnAbrirLote.setAttribute('aria-pressed', String(aberto));
+  if(aberto) document.getElementById('area-lote').focus();
+});
+document.getElementById('btn-cancelar-lote').addEventListener('click', () => {
+  blocoLote.classList.add('oculto');
+  btnAbrirLote.setAttribute('aria-pressed','false');
+});
+document.getElementById('btn-processar-lote').addEventListener('click', () => {
+  const linhas = document.getElementById('area-lote').value.split('\n');
+  let contados = 0;
+  linhas.forEach(linha => {
+    linha = linha.trim();
+    if(!linha) return;
+    let nome = '', url = '';
+    if(linha.includes('|')){
+      const p = linha.split('|');
+      nome = p[0].trim(); url = p.slice(1).join('|').trim();
+    }else{
+      const pedacos = linha.split(/\s+/);
+      const alvo = pedacos.find(p => /^https?:\/\//i.test(p) || /\.[a-z]{2,}(\/|$)/i.test(p));
+      if(alvo){ url = alvo; nome = pedacos.filter(p => p !== alvo).join(' ').trim(); }
+      else { nome = linha; }
+    }
+    if(cadastrar(nome, url, true)) contados++;
+  });
+  salvar(); desenhar();
+  document.getElementById('area-lote').value = '';
+  blocoLote.classList.add('oculto');
+  btnAbrirLote.setAttribute('aria-pressed','false');
+  alert(contados ? (contados === 1 ? '1 app cadastrado.' : contados + ' apps cadastrados.') : 'Nenhum app novo nessa lista.');
+});
+
+/* ============ ajustes ============ */
+const dlgAjustes = document.getElementById('dlg-ajustes');
+document.getElementById('btn-ajustes').addEventListener('click', () => dlgAjustes.showModal());
+document.getElementById('btn-fechar-ajustes').addEventListener('click', () => dlgAjustes.close());
+document.getElementById('btn-exportar').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(estado, null, 2)], {type:'application/json'}));
+  a.download = 'portico-lista.json'; a.click(); URL.revokeObjectURL(a.href);
+});
+const arquivo = document.getElementById('arquivo-importar');
+document.getElementById('btn-importar').addEventListener('click', () => arquivo.click());
+arquivo.addEventListener('change', () => {
+  const f = arquivo.files[0]; if(!f) return;
+  const leitor = new FileReader();
+  leitor.onload = () => {
+    try{
+      const d = JSON.parse(leitor.result);
+      if(!Array.isArray(d.apps)) throw 0;
+      estado.apps = d.apps.map(a => ({ id:a.id||novoId(), nome:String(a.nome||''), url:normalizarUrl(a.url||''), aberturas:Number(a.aberturas)||0 }));
+      estado.destaque = (d.destaque||[]).filter(id => estado.apps.some(a => a.id === id)).slice(0,4);
+      salvar(); desenhar(); dlgAjustes.close();
+    }catch(e){ alert('Esse arquivo não parece ser uma lista do Pórtico.'); }
+    arquivo.value = '';
+  };
+  leitor.readAsText(f);
+});
+document.getElementById('btn-limpar').addEventListener('click', () => {
+  if(confirm('Apagar todos os apps cadastrados? Isso não pode ser desfeito.')){
+    estado.apps = []; estado.destaque = [];
+    salvar(); desenhar(); dlgAjustes.close();
+  }
+});
+
+/* ============ busca e ordenação ============ */
+document.getElementById('busca').addEventListener('input', e => { filtro = e.target.value; desenhar(); });
+const btnOrdenar = document.getElementById('btn-ordenar');
+btnOrdenar.addEventListener('click', () => {
+  estado.ordenarPorUso = !estado.ordenarPorUso;
+  btnOrdenar.setAttribute('aria-pressed', String(estado.ordenarPorUso));
+  btnOrdenar.textContent = estado.ordenarPorUso ? 'Ordenar pelo cadastro' : 'Ordenar pelos mais abertos';
+  salvar(); desenhar();
+});
+
+/* ============ desenho ============ */
+function brasao(app){
+  const el = document.createElement('div');
+  el.className = 'brasao';
+  const letra = document.createElement('span');
+  letra.textContent = inicial(app.nome);
+  el.appendChild(letra);
+  const src = favicon(app.url);
+  if(src){
+    const img = document.createElement('img');
+    img.src = src; img.alt = ''; img.loading = 'lazy';
+    img.addEventListener('error', () => img.remove());
+    el.appendChild(img);
+  }
+  return el;
+}
+function botao(txt, titulo, acao){
+  const b = document.createElement('button');
+  b.className = 'ferramenta'; b.innerHTML = txt; b.title = titulo; b.setAttribute('aria-label', titulo);
+  b.addEventListener('click', e => { e.stopPropagation(); acao(); });
+  return b;
+}
+function selo(app){
+  if(app.url) return null;
+  const s = document.createElement('span');
+  s.className = 'pendente'; s.textContent = 'sem endereço';
+  return s;
+}
+const plural = n => n === 1 ? '1 abertura' : n + ' aberturas';
+
+function desenharDestaques(){
+  const grade = document.getElementById('grade');
+  grade.innerHTML = '';
+  destacados().filter(passaFiltro).forEach(app => {
+    const placa = document.createElement('div');
+    placa.className = 'placa'; placa.tabIndex = 0; placa.setAttribute('role','button');
+    placa.setAttribute('aria-label','Abrir ' + app.nome);
+
+    const agua = document.createElement('div');
+    agua.className = 'marca-dagua'; agua.textContent = inicial(app.nome);
+    placa.appendChild(agua);
+
+    const ord = document.createElement('span');
+    ord.className = 'ordinal'; ord.textContent = romano(estado.destaque.indexOf(app.id));
+    placa.appendChild(ord);
+
+    const s = selo(app); if(s) placa.appendChild(s);
+    placa.appendChild(brasao(app));
+
+    const nome = document.createElement('div');
+    nome.className = 'nome'; nome.textContent = app.nome;
+    placa.appendChild(nome);
+
+    if(app.url){
+      const dom = document.createElement('div');
+      dom.className = 'dominio'; dom.textContent = dominio(app.url);
+      placa.appendChild(dom);
+    }
+
+    const rodape = document.createElement('div');
+    rodape.className = 'rodape';
+    const cont = document.createElement('span');
+    cont.className = 'contagem'; cont.textContent = plural(app.aberturas);
+    rodape.appendChild(cont);
+
+    const fer = document.createElement('div');
+    fer.className = 'ferramentas';
+    fer.appendChild(botao('&#8249;','Mover para a esquerda', () => mover(app.id,-1)));
+    fer.appendChild(botao('&#8250;','Mover para a direita', () => mover(app.id,1)));
+    fer.appendChild(botao('&#8595;','Guardar na biblioteca', () => rebaixar(app.id)));
+    rodape.appendChild(fer);
+    placa.appendChild(rodape);
+
+    placa.addEventListener('click', () => abrir(app));
+    placa.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); abrir(app); } });
+    grade.appendChild(placa);
+  });
+
+  if(!filtro){
+    const faltam = 4 - destacados().length;
+    for(let i = 0; i < faltam; i++){
+      const v = document.createElement('div');
+      v.className = 'placa vazia'; v.tabIndex = 0; v.setAttribute('role','button');
+      v.innerHTML = '<span class="sinal">✛</span><p>Lugar livre sob o arco</p>';
+      const agir = () => { const p = guardados()[0]; if(p) promover(p.id); else irPara('cadastro'); };
+      v.addEventListener('click', agir);
+      v.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); agir(); } });
+      grade.appendChild(v);
+    }
+  }
+  document.getElementById('nota-destaque').textContent = destacados().length + ' de 4';
+}
+
+function desenharBiblioteca(){
+  const trilho = document.getElementById('trilho');
+  trilho.innerHTML = '';
+  const lista = guardados().filter(passaFiltro);
+  if(!lista.length){
+    const p = document.createElement('p');
+    p.className = 'sem-resultado';
+    p.textContent = filtro ? 'Nada encontrado com esse termo.'
+      : (estado.apps.length ? 'Todos os apps cadastrados estão sob o arco.' : 'Nenhum app cadastrado ainda. Abra o Cadastro e comece pelo primeiro.');
+    trilho.appendChild(p);
+    return;
+  }
+  lista.forEach(app => {
+    const m = document.createElement('div');
+    m.className = 'medalha'; m.tabIndex = 0; m.setAttribute('role','button');
+    m.setAttribute('aria-label','Abrir ' + app.nome);
+    const s = selo(app); if(s) m.appendChild(s);
+    m.appendChild(brasao(app));
+    const nome = document.createElement('div');
+    nome.className = 'nome'; nome.textContent = app.nome;
+    m.appendChild(nome);
+    const cont = document.createElement('span');
+    cont.className = 'contagem'; cont.textContent = plural(app.aberturas);
+    m.appendChild(cont);
+    const fer = document.createElement('div');
+    fer.className = 'ferramentas';
+    fer.appendChild(botao('&#9650;','Pôr em destaque', () => promover(app.id)));
+    fer.appendChild(botao('&#9998;','Editar no cadastro', () => {
+      irPara('cadastro');
+      const alvo = document.querySelector('[data-url-de="'+app.id+'"]');
+      if(alvo){ alvo.focus(); alvo.scrollIntoView({block:'center'}); }
+    }));
+    m.appendChild(fer);
+    m.addEventListener('click', () => abrir(app));
+    m.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); abrir(app); } });
+    trilho.appendChild(m);
+  });
+}
+
+function desenharLivro(){
+  const corpo = document.getElementById('livro-corpo');
+  corpo.innerHTML = '';
+  const lista = estado.apps.filter(passaFiltro);
+  if(!lista.length){
+    const v = document.createElement('div');
+    v.className = 'livro-vazio';
+    v.textContent = filtro ? 'Nada encontrado com esse termo.' : 'Nenhum app cadastrado. Use o formulário acima — ou cadastre vários de uma vez.';
+    corpo.appendChild(v);
+  }
+  lista.forEach(app => {
+    const linha = document.createElement('div');
+    linha.className = 'linha';
+    linha.appendChild(brasao(app));
+
+    const celNome = document.createElement('div');
+    celNome.className = 'cel-nome';
+    const inNome = document.createElement('input');
+    inNome.className = 'nome-in'; inNome.value = app.nome; inNome.maxLength = 34;
+    inNome.setAttribute('aria-label','Nome do app');
+    inNome.addEventListener('change', () => {
+      app.nome = inNome.value.trim() || (dominio(app.url).split('.')[0] || 'Sem nome');
+      salvar(); desenhar();
+    });
+    celNome.appendChild(inNome);
+    linha.appendChild(celNome);
+
+    const celUrl = document.createElement('div');
+    celUrl.className = 'cel-url';
+    const inUrl = document.createElement('input');
+    inUrl.type = 'url'; inUrl.value = app.url; inUrl.spellcheck = false;
+    inUrl.placeholder = 'informe o endereço';
+    inUrl.setAttribute('aria-label','Endereço do app');
+    inUrl.setAttribute('data-url-de', app.id);
+    inUrl.addEventListener('change', () => { app.url = normalizarUrl(inUrl.value); salvar(); desenhar(); });
+    celUrl.appendChild(inUrl);
+    linha.appendChild(celUrl);
+
+    const celCont = document.createElement('div');
+    celCont.className = 'cel-cont contagem';
+    celCont.textContent = app.aberturas;
+    linha.appendChild(celCont);
+
+    const acoes = document.createElement('div');
+    acoes.className = 'acoes-linha';
+    if(estado.destaque.includes(app.id)){
+      const marca = document.createElement('span');
+      marca.className = 'no-arco'; marca.textContent = 'no arco ' + romano(estado.destaque.indexOf(app.id));
+      acoes.appendChild(marca);
+      acoes.appendChild(botao('&#8595;','Tirar do destaque', () => rebaixar(app.id)));
+    }else{
+      acoes.appendChild(botao('&#9650;','Pôr em destaque', () => promover(app.id)));
+    }
+    acoes.appendChild(botao('&#8599;','Abrir', () => abrir(app)));
+    acoes.appendChild(botao('&#10005;','Remover do cadastro', () => {
+      if(confirm('Remover "' + app.nome + '" do cadastro?')) remover(app.id);
+    }));
+    linha.appendChild(acoes);
+
+    corpo.appendChild(linha);
+  });
+  const total = estado.apps.length;
+  document.getElementById('nota-cadastro').textContent = total + (total === 1 ? ' app' : ' apps');
+  document.getElementById('tot-aba').textContent = total;
+}
+
+function desenhar(){
+  desenharDestaques();
+  desenharBiblioteca();
+  desenharLivro();
+  const total = estado.apps.length;
+  const sem = estado.apps.filter(a => !a.url).length;
+  document.getElementById('resumo').textContent =
+    total + (total === 1 ? ' app reunido' : ' apps reunidos') + (sem ? ' · ' + sem + ' sem endereço' : '');
+}
+
+/* ============ data ============ */
+document.getElementById('data-hoje').textContent =
+  new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
+
+/* ============ manifesto ============ */
+(function(){
+  const icone = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#0A1422"/><path d="M126 420V236a130 130 0 0 1 260 0v184" fill="none" stroke="#C9A227" stroke-width="14"/><text x="256" y="330" font-family="Georgia,serif" font-size="150" fill="#C9A227" text-anchor="middle">P</text></svg>'
+  );
+  const manifesto = { name:'Pórtico', short_name:'Pórtico', start_url:'.', display:'standalone',
+    background_color:'#0A1422', theme_color:'#0A1422',
+    icons:[{ src:icone, sizes:'512x512', type:'image/svg+xml', purpose:'any' }] };
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = URL.createObjectURL(new Blob([JSON.stringify(manifesto)], {type:'application/manifest+json'}));
+  document.head.appendChild(link);
+  const ap = document.createElement('link');
+  ap.rel = 'apple-touch-icon'; ap.href = icone;
+  document.head.appendChild(ap);
+})();
+
+carregar().then(desenhar);
+</script>
+</body>
+</html>
