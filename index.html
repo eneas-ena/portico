@@ -41,8 +41,8 @@ body::after{
 .marca img{width:32px;height:32px;border-radius:8px;display:block;flex:none}
 .brasao-envio{position:relative;display:inline-block;cursor:pointer;flex:none}
 .brasao-envio .troca{
-  position:absolute;inset:0;display:grid;place-items:center;border-radius:50%;
-  font-family:var(--sans);font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;
+  position:absolute;inset:0;display:grid;place-items:center;border-radius:11px;
+  font-family:var(--sans);font-size:8px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--ouro-2);background:rgba(10,20,34,.85);opacity:0;transition:opacity .18s;
 }
 .brasao-envio:hover .troca,.brasao-envio:focus-within .troca{opacity:1}
@@ -73,6 +73,34 @@ body::after{
 .btn.solido:hover{background:var(--ouro-2)}
 .btn.mudo{border-color:rgba(143,160,188,.25);color:var(--nevoa)}
 .btn.mudo:hover{border-color:rgba(143,160,188,.5);background:rgba(143,160,188,.08);color:var(--marfim)}
+.chip-nuvem{
+  display:flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(143,160,188,.22);
+  border-radius:var(--raio);padding:0 12px;height:38px;cursor:pointer;flex:none;
+  font-family:var(--sans);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--nevoa);transition:.2s;
+}
+.chip-nuvem:hover{border-color:rgba(201,162,39,.5);color:var(--marfim)}
+.chip-nuvem .ponto{width:7px;height:7px;border-radius:50%;background:rgba(143,160,188,.5);flex:none}
+.chip-nuvem.ligada .ponto{background:#7BC08D}
+.chip-nuvem.ocupada .ponto{background:var(--ouro-2);animation:pulsar 1.1s ease-in-out infinite}
+.chip-nuvem.falha .ponto{background:#E08A7A}
+@keyframes pulsar{50%{opacity:.25}}
+.bloco-nuvem{border:1px solid rgba(201,162,39,.25);border-radius:var(--raio);padding:20px 18px 16px;margin-bottom:26px}
+.titulo-bloco{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;
+  font-family:"Cinzel",serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+}
+.selo-estado{font-family:var(--sans);font-size:9.5px;letter-spacing:.14em;color:var(--nevoa);border:1px solid rgba(143,160,188,.3);padding:3px 8px;border-radius:2px}
+.selo-estado.ligada{color:#7BC08D;border-color:rgba(123,192,141,.45)}
+.selo-estado.falha{color:#E08A7A;border-color:rgba(224,138,122,.45)}
+.sql{margin-top:18px;border-top:1px solid rgba(201,162,39,.16);padding-top:14px}
+.sql summary{font-family:var(--sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ouro-2);cursor:pointer}
+.sql p{font-family:var(--sans);font-size:11.5px;line-height:1.6;color:rgba(143,160,188,.85);margin:12px 0 8px}
+.sql pre{
+  background:rgba(0,0,0,.3);border:1px solid rgba(143,160,188,.18);border-radius:var(--raio);
+  padding:12px;font-size:11px;line-height:1.6;color:var(--marfim);overflow-x:auto;margin:0;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+.sql .obs{color:rgba(143,160,188,.65)}
 .icone-btn{
   width:38px;height:38px;display:grid;place-items:center;background:transparent;
   border:1px solid rgba(143,160,188,.22);border-radius:var(--raio);color:var(--nevoa);cursor:pointer;transition:.2s;flex:none;
@@ -106,7 +134,7 @@ body::after{
 .grade{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
 .placa{
   position:relative;background:linear-gradient(160deg,#101D36 0%,#0C1728 100%);
-  border:1px solid rgba(201,162,39,.28);border-radius:var(--raio);padding:30px 20px 22px;min-height:238px;
+  border:1px solid rgba(201,162,39,.28);border-radius:var(--raio);padding:30px 20px 22px;min-height:286px;
   display:flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer;overflow:hidden;
   transition:border-color .25s,transform .25s,box-shadow .25s;animation:subir .6s cubic-bezier(.2,.7,.3,1) both;
 }
@@ -124,11 +152,11 @@ body::after{
 .placa:hover .marca-dagua{opacity:.09}
 .ordinal{position:absolute;top:14px;left:16px;font-family:"Cinzel",serif;font-size:11px;letter-spacing:.14em;color:rgba(201,162,39,.6)}
 .brasao{
-  position:relative;width:62px;height:62px;border-radius:50%;display:grid;place-items:center;
-  border:1px solid rgba(201,162,39,.45);background:rgba(201,162,39,.06);margin-bottom:18px;flex:none;
+  position:relative;width:88px;height:88px;border-radius:18px;display:grid;place-items:center;
+  border:1px solid rgba(201,162,39,.4);background:rgba(201,162,39,.05);margin-bottom:16px;flex:none;overflow:hidden;
 }
-.brasao img{width:32px;height:32px;border-radius:4px;position:absolute;background:#0F1B33;padding:2px}
-.brasao span{font-family:"Cinzel",serif;font-size:23px;color:var(--ouro-2)}
+.brasao img{width:100%;height:100%;border-radius:17px;object-fit:cover;display:block}
+.brasao span{font-family:"Cinzel",serif;font-size:34px;color:var(--ouro-2)}
 .placa .nome{font-family:"Cinzel",serif;font-size:14px;letter-spacing:.16em;text-transform:uppercase;line-height:1.45;position:relative}
 .placa .dominio{font-family:var(--sans);font-size:10.5px;color:rgba(143,160,188,.7);margin-top:9px;position:relative;word-break:break-all}
 .placa .rodape{margin-top:auto;padding-top:16px;width:100%;border-top:1px solid rgba(201,162,39,.16);display:flex;align-items:center;justify-content:space-between;position:relative}
@@ -155,14 +183,14 @@ body::after{
 .trilho::-webkit-scrollbar-thumb{background:rgba(201,162,39,.35);border-radius:3px}
 .trilho::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
 .medalha{
-  flex:none;width:136px;scroll-snap-align:start;background:rgba(255,255,255,.022);
+  flex:none;width:146px;scroll-snap-align:start;background:rgba(255,255,255,.022);
   border:1px solid rgba(143,160,188,.16);border-radius:var(--raio);padding:20px 12px 12px;
   display:flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer;transition:.22s;position:relative;
 }
 .medalha:hover,.medalha:focus-within{border-color:rgba(201,162,39,.55);background:rgba(201,162,39,.05);transform:translateY(-2px)}
-.medalha .brasao{width:46px;height:46px;margin-bottom:13px}
-.medalha .brasao img{width:24px;height:24px}
-.medalha .brasao span{font-size:17px}
+.medalha .brasao{width:64px;height:64px;border-radius:14px;margin-bottom:12px}
+.medalha .brasao img{border-radius:13px}
+.medalha .brasao span{font-size:25px}
 .medalha .nome{font-family:"Cinzel",serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;line-height:1.5}
 .medalha .contagem{margin-top:7px}
 .medalha .ferramentas{margin-top:11px;padding-top:9px;border-top:1px solid rgba(143,160,188,.14);width:100%;justify-content:center}
@@ -188,7 +216,7 @@ body::after{
 .lote{margin-top:22px;padding-top:22px;border-top:1px solid rgba(201,162,39,.16)}
 
 .livro{border:1px solid rgba(143,160,188,.16);border-radius:var(--raio);overflow:hidden}
-.cabeca,.linha{display:grid;grid-template-columns:52px minmax(140px,1.1fr) minmax(180px,1.7fr) 92px 132px;gap:10px;align-items:center;padding:0 14px}
+.cabeca,.linha{display:grid;grid-template-columns:62px minmax(140px,1.1fr) minmax(180px,1.7fr) 92px 132px;gap:10px;align-items:center;padding:0 14px}
 .cabeca{
   height:42px;background:rgba(201,162,39,.07);border-bottom:1px solid rgba(201,162,39,.22);
   font-family:"Cinzel",serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(201,162,39,.85);
@@ -196,9 +224,9 @@ body::after{
 .linha{min-height:58px;border-bottom:1px solid rgba(143,160,188,.1);transition:background .18s}
 .linha:last-child{border-bottom:none}
 .linha:hover{background:rgba(255,255,255,.022)}
-.linha .brasao{width:34px;height:34px;margin:0}
-.linha .brasao img{width:19px;height:19px}
-.linha .brasao span{font-size:14px}
+.linha .brasao{width:44px;height:44px;border-radius:11px;margin:0}
+.linha .brasao img{border-radius:10px}
+.linha .brasao span{font-size:18px}
 .linha input{
   width:100%;background:transparent;border:1px solid transparent;border-radius:var(--raio);color:var(--marfim);
   padding:8px 9px;font-family:var(--sans);font-size:13px;outline:none;
@@ -235,7 +263,7 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
   .grade{grid-template-columns:repeat(2,1fr)}
   .marca-dagua{font-size:130px}
   .cabeca{display:none}
-  .linha{grid-template-columns:44px 1fr;grid-template-areas:"br nome" "br url" ". meta";row-gap:6px;padding:14px}
+  .linha{grid-template-columns:54px 1fr;grid-template-areas:"br nome" "br url" ". meta";row-gap:6px;padding:14px}
   .linha .brasao-envio{grid-area:br}
   .linha .cel-nome{grid-area:nome}
   .linha .cel-url{grid-area:url}
@@ -250,9 +278,9 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
   .busca{order:4;flex-basis:100%}
   .abertura{padding:48px 0 42px}
   .grade{gap:12px}
-  .placa{padding:24px 12px 16px;min-height:196px}
+  .placa{padding:24px 12px 16px;min-height:244px}
   .placa .dominio{display:none}
-  .brasao{width:52px;height:52px;margin-bottom:14px}
+  .brasao{width:76px;height:76px;border-radius:16px;margin-bottom:14px}
   .painel{padding:20px 16px}
 }
 @media(prefers-reduced-motion:reduce){
@@ -274,6 +302,9 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8FA0BC" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <input id="busca" type="search" placeholder="Buscar entre seus apps" autocomplete="off" aria-label="Buscar entre seus apps">
     </div>
+    <button class="chip-nuvem" id="chip-nuvem" title="Sincronização entre aparelhos">
+      <span class="ponto" id="ponto-nuvem"></span><span id="texto-nuvem">Nuvem desligada</span>
+    </button>
     <button class="icone-btn" id="btn-ajustes" aria-label="Ajustes" title="Ajustes">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
     </button>
@@ -361,13 +392,50 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
 <dialog id="dlg-ajustes">
   <div class="folha">
     <h3>Ajustes</h3>
-    <p class="sub">Sua lista fica guardada neste navegador.</p>
+    <p class="sub">O projeto Supabase já vem configurado neste arquivo. A mesma lista aparece no Mac e no celular.</p>
+
+    <div class="bloco-nuvem">
+      <div class="titulo-bloco">
+        <span>Sincronizar entre aparelhos</span>
+        <span class="selo-estado" id="selo-estado">desligada</span>
+      </div>
+      <div class="campo">
+        <label for="nuvem-url">URL do projeto Supabase</label>
+        <input id="nuvem-url" type="url" spellcheck="false" placeholder="https://seuprojeto.supabase.co">
+      </div>
+      <div class="campo">
+        <label for="nuvem-chave">Chave anon (public)</label>
+        <input id="nuvem-chave" type="password" spellcheck="false" placeholder="eyJhbGciOi...">
+      </div>
+      <div class="linha-acao" style="margin-top:12px">
+        <button class="btn mudo esq" id="btn-puxar">Puxar da nuvem</button>
+        <button class="btn mudo" id="btn-desconectar">Desligar</button>
+        <button class="btn solido" id="btn-conectar">Ligar e enviar</button>
+      </div>
+      <details class="sql" open>
+        <summary>Tabela exigida no Supabase (rode uma vez)</summary>
+        <p>Abra o SQL Editor do seu projeto e rode este comando. Sem essa tabela, a sincronização acusa falha:</p>
+        <pre id="sql-texto">create table if not exists portico_estado (
+  id text primary key,
+  dados jsonb not null,
+  carimbo bigint not null default 0
+);
+
+alter table portico_estado enable row level security;
+
+create policy "portico_acesso" on portico_estado
+  for all to anon using (true) with check (true);</pre>
+        <button class="btn mudo" id="btn-copiar-sql" style="margin-top:10px">Copiar SQL</button>
+        <p class="obs">Essa política deixa quem tiver a chave anon ler e gravar a tabela. Como aqui só ficam nomes e endereços dos seus apps, é um risco pequeno — mas não guarde nada sigiloso nela.</p>
+      </details>
+    </div>
+
     <div class="lista-ajustes">
       <button class="btn mudo" id="btn-exportar">Exportar lista (arquivo .json)</button>
       <button class="btn mudo" id="btn-importar">Importar lista de um arquivo</button>
       <button class="btn mudo perigo" id="btn-limpar">Apagar tudo e recomeçar</button>
     </div>
-    <p class="aviso">Ao publicar este arquivo no GitHub Pages, exporte a lista aqui e importe de volta lá — cada endereço guarda os dados separadamente.</p>
+    <p class="aviso">Sem o Supabase ligado, cada endereço (esta prévia, o GitHub Pages, o celular) guarda a lista separadamente — nesse caso use exportar e importar. Com o Supabase ligado, os três passam a ver a mesma lista.</p>
     <div class="linha-acao"><button class="btn solido" id="btn-fechar-ajustes">Fechar</button></div>
   </div>
   <input type="file" id="arquivo-importar" accept="application/json,.json" hidden>
@@ -414,23 +482,104 @@ function passaFiltro(a){
   const t = filtro.toLowerCase();
   return a.nome.toLowerCase().includes(t) || dominio(a.url).toLowerCase().includes(t);
 }
-function salvar(){ cofre.gravar(JSON.stringify(estado)); }
+function guardarLocal(){ cofre.gravar(JSON.stringify(estado)); }
+function salvar(){ estado.carimbo = Date.now(); guardarLocal(); agendarEnvio(); }
+
+/* recebe um estado vindo do arquivo, do navegador ou do Supabase */
+function adotar(d){
+  if(!d || !Array.isArray(d.apps)) return false;
+  estado.apps = d.apps.map(a => ({
+    id: a.id || novoId(),
+    nome: String(a.nome || '').slice(0,40),
+    url: normalizarUrl(a.url || ''),
+    icone: typeof a.icone === 'string' ? a.icone : '',
+    aberturas: Number(a.aberturas) || 0
+  }));
+  estado.destaque = Array.isArray(d.destaque) ? d.destaque.filter(id => estado.apps.some(a => a.id === id)).slice(0,4) : [];
+  estado.ordenarPorUso = !!d.ordenarPorUso;
+  estado.carimbo = Number(d.carimbo) || 0;
+  return true;
+}
 async function carregar(){
   const bruto = await cofre.ler();
   if(!bruto) return;
+  try{ adotar(JSON.parse(bruto)); }catch(e){}
+}
+
+/* ============ Supabase ============ */
+const CHAVE_NUVEM = 'portico:nuvem';
+/* Projeto Supabase do Pórtico — já vem preenchido em qualquer aparelho */
+const NUVEM_PADRAO = {
+  url: 'https://mwlcfvkvcwmbsvtvjlkj.supabase.co',
+  chave: 'sb_publishable_FHhhK6oMy1fp4dOfx1NVgg_GCbB1EKJ'
+};
+let nuvem = { url:NUVEM_PADRAO.url, chave:NUVEM_PADRAO.chave, ativa:true };
+let relogioEnvio = null;
+
+function lerConfigNuvem(){
+  nuvem.url = NUVEM_PADRAO.url;
+  nuvem.chave = NUVEM_PADRAO.chave;
   try{
-    const d = JSON.parse(bruto);
-    if(!Array.isArray(d.apps)) return;
-    estado.apps = d.apps.map(a => ({
-      id: a.id || novoId(),
-      nome: String(a.nome || '').slice(0,40),
-      url: normalizarUrl(a.url || ''),
-      icone: typeof a.icone === 'string' ? a.icone : '',
-      aberturas: Number(a.aberturas) || 0
-    }));
-    estado.destaque = Array.isArray(d.destaque) ? d.destaque.filter(id => estado.apps.some(a => a.id === id)).slice(0,4) : [];
-    estado.ordenarPorUso = !!d.ordenarPorUso;
+    const t = localStorage.getItem(CHAVE_NUVEM);
+    if(t){
+      const d = JSON.parse(t);
+      if(d.url) nuvem.url = d.url;
+      if(d.chave) nuvem.chave = d.chave;
+      nuvem.ativa = d.ativa === false ? false : !!(nuvem.url && nuvem.chave);
+      return;
+    }
   }catch(e){}
+  nuvem.ativa = !!(nuvem.url && nuvem.chave);
+}
+function gravarConfigNuvem(){ try{ localStorage.setItem(CHAVE_NUVEM, JSON.stringify(nuvem)); }catch(e){} }
+const baseNuvem = () => nuvem.url.replace(/\/+$/,'') + '/rest/v1/portico_estado';
+const cabecalhos = () => ({ apikey:nuvem.chave, Authorization:'Bearer ' + nuvem.chave, 'Content-Type':'application/json' });
+
+async function puxarNuvem(){
+  const r = await fetch(baseNuvem() + '?id=eq.principal&select=dados,carimbo', { headers:cabecalhos() });
+  if(!r.ok) throw new Error('HTTP ' + r.status + ' — ' + (await r.text()).slice(0,140));
+  const linhas = await r.json();
+  return linhas[0] || null;
+}
+async function enviarNuvem(){
+  const r = await fetch(baseNuvem(), {
+    method:'POST',
+    headers: Object.assign(cabecalhos(), { Prefer:'resolution=merge-duplicates,return=minimal' }),
+    body: JSON.stringify([{ id:'principal', dados:estado, carimbo:estado.carimbo || Date.now() }])
+  });
+  if(!r.ok) throw new Error('HTTP ' + r.status + ' — ' + (await r.text()).slice(0,140));
+}
+function agendarEnvio(){
+  if(!nuvem.ativa) return;
+  clearTimeout(relogioEnvio);
+  marcarNuvem('ocupada','salvando…');
+  relogioEnvio = setTimeout(async () => {
+    try{ await enviarNuvem(); marcarNuvem('ligada','nuvem em dia'); }
+    catch(e){ marcarNuvem('falha','falha ao salvar'); }
+  }, 900);
+}
+function marcarNuvem(classe, texto){
+  const chip = document.getElementById('chip-nuvem');
+  chip.className = 'chip-nuvem ' + (classe || '');
+  document.getElementById('texto-nuvem').textContent = texto;
+  const selo = document.getElementById('selo-estado');
+  selo.className = 'selo-estado ' + (classe === 'ligada' ? 'ligada' : classe === 'falha' ? 'falha' : '');
+  selo.textContent = texto;
+}
+async function sincronizarNaAbertura(){
+  if(!nuvem.ativa){ marcarNuvem('','nuvem desligada'); return; }
+  marcarNuvem('ocupada','sincronizando…');
+  try{
+    const remoto = await puxarNuvem();
+    if(remoto && remoto.dados && (Number(remoto.carimbo) || 0) > (estado.carimbo || 0)){
+      adotar(remoto.dados); guardarLocal(); desenhar();
+    }else if(!remoto){
+      await enviarNuvem();
+    }
+    marcarNuvem('ligada','nuvem em dia');
+  }catch(e){
+    marcarNuvem('falha','sem conexão');
+  }
 }
 
 /* ============ cadastro de apps ============ */
@@ -534,7 +683,51 @@ document.getElementById('btn-processar-lote').addEventListener('click', () => {
 
 /* ============ ajustes ============ */
 const dlgAjustes = document.getElementById('dlg-ajustes');
-document.getElementById('btn-ajustes').addEventListener('click', () => dlgAjustes.showModal());
+document.getElementById('btn-ajustes').addEventListener('click', () => {
+  document.getElementById('nuvem-url').value = nuvem.url;
+  document.getElementById('nuvem-chave').value = nuvem.chave;
+  dlgAjustes.showModal();
+});
+document.getElementById('chip-nuvem').addEventListener('click', () => document.getElementById('btn-ajustes').click());
+document.getElementById('btn-conectar').addEventListener('click', async () => {
+  nuvem.url = document.getElementById('nuvem-url').value.trim();
+  nuvem.chave = document.getElementById('nuvem-chave').value.trim();
+  if(!nuvem.url || !nuvem.chave){ alert('Informe a URL do projeto e a chave anon.'); return; }
+  nuvem.ativa = true; gravarConfigNuvem();
+  marcarNuvem('ocupada','enviando…');
+  try{
+    estado.carimbo = Date.now(); guardarLocal();
+    await enviarNuvem();
+    marcarNuvem('ligada','nuvem em dia');
+  }catch(e){
+    marcarNuvem('falha','falha: verifique a tabela');
+    alert('Não consegui gravar no Supabase.\n\n' + e.message + '\n\nConfira se a tabela portico_estado foi criada com o SQL indicado.');
+  }
+});
+document.getElementById('btn-puxar').addEventListener('click', async () => {
+  if(!nuvem.url || !nuvem.chave){ alert('Informe a URL do projeto e a chave anon.'); return; }
+  nuvem.ativa = true; gravarConfigNuvem();
+  marcarNuvem('ocupada','puxando…');
+  try{
+    const remoto = await puxarNuvem();
+    if(!remoto){ marcarNuvem('ligada','nuvem vazia'); alert('Ainda não há nada gravado na nuvem.'); return; }
+    adotar(remoto.dados); guardarLocal(); desenhar();
+    marcarNuvem('ligada','nuvem em dia');
+  }catch(e){
+    marcarNuvem('falha','falha ao puxar');
+    alert('Não consegui ler do Supabase.\n\n' + e.message);
+  }
+});
+document.getElementById('btn-desconectar').addEventListener('click', () => {
+  nuvem.ativa = false; gravarConfigNuvem();
+  marcarNuvem('','nuvem desligada');
+});
+document.getElementById('btn-copiar-sql').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-copiar-sql');
+  try{ await navigator.clipboard.writeText(document.getElementById('sql-texto').textContent); btn.textContent = 'Copiado'; }
+  catch(e){ btn.textContent = 'Selecione e copie'; }
+  setTimeout(() => { btn.textContent = 'Copiar SQL'; }, 2200);
+});
 document.getElementById('btn-fechar-ajustes').addEventListener('click', () => dlgAjustes.close());
 document.getElementById('btn-exportar').addEventListener('click', () => {
   const a = document.createElement('a');
@@ -548,10 +741,7 @@ arquivo.addEventListener('change', () => {
   const leitor = new FileReader();
   leitor.onload = () => {
     try{
-      const d = JSON.parse(leitor.result);
-      if(!Array.isArray(d.apps)) throw 0;
-      estado.apps = d.apps.map(a => ({ id:a.id||novoId(), nome:String(a.nome||''), url:normalizarUrl(a.url||''), icone:typeof a.icone === 'string' ? a.icone : '', aberturas:Number(a.aberturas)||0 }));
-      estado.destaque = (d.destaque||[]).filter(id => estado.apps.some(a => a.id === id)).slice(0,4);
+      if(!adotar(JSON.parse(leitor.result))) throw 0;
       salvar(); desenhar(); dlgAjustes.close();
     }catch(e){ alert('Esse arquivo não parece ser uma lista do Pórtico.'); }
     arquivo.value = '';
@@ -851,7 +1041,8 @@ const SELO_512 = 'data:image/webp;base64,UklGRobEAABXRUJQVlA4WAoAAAAQAAAA/wEA/wE
   document.head.appendChild(link);
 })();
 
-carregar().then(desenhar);
+lerConfigNuvem();
+carregar().then(() => { desenhar(); sincronizarNaAbertura(); });
 </script>
 </body>
 </html>
