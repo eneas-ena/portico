@@ -155,7 +155,7 @@ body::after{
   position:relative;width:88px;height:88px;border-radius:18px;display:grid;place-items:center;
   border:1px solid rgba(201,162,39,.4);background:rgba(201,162,39,.05);margin-bottom:16px;flex:none;overflow:hidden;
 }
-.brasao img{width:100%;height:100%;border-radius:17px;object-fit:cover;display:block}
+.brasao img{position:absolute;inset:0;width:100%;height:100%;border-radius:17px;object-fit:cover;display:block}
 .brasao span{font-family:"Cinzel",serif;font-size:34px;color:var(--ouro-2)}
 .placa .nome{font-family:"Cinzel",serif;font-size:14px;letter-spacing:.16em;text-transform:uppercase;line-height:1.45;position:relative}
 .placa .dominio{font-family:var(--sans);font-size:10.5px;color:rgba(143,160,188,.7);margin-top:9px;position:relative;word-break:break-all}
@@ -467,7 +467,6 @@ function normalizarUrl(u){
   return u;
 }
 function dominio(url){ try{ return new URL(url).hostname.replace(/^www\./,''); }catch(e){ return ''; } }
-function favicon(url){ const h = dominio(url); return h ? 'https://www.google.com/s2/favicons?domain=' + h + '&sz=128' : ''; }
 const inicial = n => (n||'?').trim().charAt(0).toUpperCase();
 const romano = i => ['I','II','III','IV'][i] || '';
 const achar = id => estado.apps.find(a => a.id === id);
@@ -772,12 +771,11 @@ function brasao(app){
   const letra = document.createElement('span');
   letra.textContent = inicial(app.nome);
   el.appendChild(letra);
-  const src = app.icone || favicon(app.url);
-  if(src){
+  if(app.icone){
     const img = document.createElement('img');
-    img.src = src; img.alt = ''; img.loading = 'lazy';
-    if(app.icone) img.classList.add('proprio');
-    img.addEventListener('error', () => img.remove());
+    img.src = app.icone; img.alt = ''; img.loading = 'lazy';
+    img.addEventListener('load', () => { letra.style.display = 'none'; });
+    img.addEventListener('error', () => { img.remove(); letra.style.display = ''; });
     el.appendChild(img);
   }
   return el;
