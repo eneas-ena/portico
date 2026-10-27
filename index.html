@@ -221,10 +221,27 @@ body::after{
 
 /* ---------- carrossel ---------- */
 .biblioteca{margin-top:64px}
-.trilho{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x proximity;padding:4px 2px 18px;scrollbar-width:thin;scrollbar-color:rgba(var(--ouro-rgb),.35) transparent}
-.trilho::-webkit-scrollbar{height:5px}
-.trilho::-webkit-scrollbar-thumb{background:rgba(var(--ouro-rgb),.35);border-radius:3px}
-.trilho::-webkit-scrollbar-track{background:rgba(var(--elev-rgb),.03)}
+.trilho-caixa{position:relative}
+.trilho{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x proximity;padding:4px 2px 14px;scrollbar-width:none;-ms-overflow-style:none;scroll-behavior:smooth}
+.trilho::-webkit-scrollbar{display:none}
+.seta{
+  position:absolute;top:calc(50% - 20px);transform:translateY(-50%);z-index:5;
+  width:34px;height:76px;display:grid;place-items:center;cursor:pointer;
+  background:linear-gradient(to right,var(--tinta) 30%,transparent);
+  border:1px solid rgba(var(--ouro-rgb),.35);border-radius:var(--raio);
+  color:var(--ouro-2);font-family:var(--sans);font-size:20px;line-height:1;transition:.2s;
+}
+.seta.esq{left:-6px}
+.seta.dir{right:-6px;background:linear-gradient(to left,var(--tinta) 30%,transparent)}
+.seta:hover{background:rgba(var(--ouro-rgb),.18);border-color:var(--ouro)}
+.seta[disabled]{opacity:.2;cursor:default}
+.barra{height:6px;border-radius:3px;background:rgba(var(--elev-rgb),.07);border:1px solid rgba(var(--frio-rgb),.14);cursor:pointer;position:relative}
+.pino{position:absolute;top:0;left:0;height:100%;min-width:34px;border-radius:3px;background:rgba(var(--ouro-rgb),.55)}
+.barra:hover .pino{background:var(--ouro)}
+.trilho.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));overflow:visible;padding-bottom:4px}
+.trilho.grade .medalha{width:auto}
+.grade-ligada .seta,.grade-ligada .barra{display:none}
+
 .medalha{
   flex:none;width:146px;scroll-snap-align:start;background:rgba(var(--elev-rgb),.022);
   border:1px solid rgba(var(--frio-rgb),.16);border-radius:var(--raio);padding:20px 12px 12px;
@@ -318,6 +335,8 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
   .par{grid-template-columns:1fr}
 }
 @media(max-width:640px){
+  .seta{display:none}
+  .trilho.grade{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
   .envoltorio{padding:0 16px 70px}
   .rail{flex-wrap:wrap;gap:10px}
   .marca{font-size:16px;letter-spacing:.22em}
@@ -380,9 +399,17 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
     <section class="biblioteca">
       <div class="rotulo">
         <h2>A biblioteca</h2><span class="regua"></span>
-        <button class="ligacao" id="btn-ordenar" aria-pressed="false">Ordenar pelos mais abertos</button>
+        <div class="controles">
+          <button class="ligacao" id="btn-visao" aria-pressed="false">Ver tudo em grade</button>
+          <button class="ligacao" id="btn-ordenar" aria-pressed="false">Ordenar pelos mais abertos</button>
+        </div>
       </div>
-      <div class="trilho" id="trilho"></div>
+      <div class="trilho-caixa" id="trilho-caixa">
+        <button class="seta esq" id="seta-esq" aria-label="Voltar">&#8249;</button>
+        <div class="trilho" id="trilho"></div>
+        <button class="seta dir" id="seta-dir" aria-label="Avançar">&#8250;</button>
+        <div class="barra" id="barra" title="Arraste para percorrer a biblioteca"><div class="pino" id="pino"></div></div>
+      </div>
     </section>
   </main>
 
@@ -462,19 +489,15 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
       <details class="sql" open>
         <summary>Tabela exigida no Supabase (rode uma vez)</summary>
         <p>Abra o SQL Editor do seu projeto e rode este comando. Sem essa tabela, a sincronização acusa falha:</p>
-        <pre id="sql-texto">create schema if not exists portico;
-grant usage on schema portico to anon, authenticated, service_role;
-
-create table if not exists portico.portico_estado (
+        <pre id="sql-texto">create table if not exists portico_estado (
   id text primary key,
   dados jsonb not null,
   carimbo bigint not null default 0
 );
-grant all on portico.portico_estado to anon, authenticated, service_role;
 
-alter table portico.portico_estado enable row level security;
+alter table portico_estado enable row level security;
 
-create policy "portico_acesso" on portico.portico_estado
+create policy "portico_acesso" on portico_estado
   for all to anon using (true) with check (true);</pre>
         <button class="btn mudo" id="btn-copiar-sql" style="margin-top:10px">Copiar SQL</button>
         <p class="obs">Essa política deixa quem tiver a chave anon ler e gravar a tabela. Como aqui só ficam nomes e endereços dos seus apps, é um risco pequeno — mas não guarde nada sigiloso nela.</p>
@@ -581,11 +604,11 @@ async function carregar(){
 }
 
 /* ============ Supabase ============ */
-const CHAVE_NUVEM = 'portico:nuvem2'; /* v1.3: chave nova para ignorar a configuração antiga salva no aparelho */
+const CHAVE_NUVEM = 'portico:nuvem';
 /* Projeto Supabase do Pórtico — já vem preenchido em qualquer aparelho */
 const NUVEM_PADRAO = {
-  url: 'https://ghjbljypxksubmcsvaig.supabase.co',
-  chave: 'sb_publishable_qXCYqg1WdmelY9D1mptZXg_U8NdoKby'
+  url: 'https://mwlcfvkvcwmbsvtvjlkj.supabase.co',
+  chave: 'sb_publishable_FHhhK6oMy1fp4dOfx1NVgg_GCbB1EKJ'
 };
 let nuvem = { url:NUVEM_PADRAO.url, chave:NUVEM_PADRAO.chave, ativa:true };
 let relogioEnvio = null;
@@ -607,9 +630,7 @@ function lerConfigNuvem(){
 }
 function gravarConfigNuvem(){ try{ localStorage.setItem(CHAVE_NUVEM, JSON.stringify(nuvem)); }catch(e){} }
 const baseNuvem = () => nuvem.url.replace(/\/+$/,'') + '/rest/v1/portico_estado';
-/* v1.3: a tabela agora mora no schema 'portico' do projeto quiz-biblico */
-const SCHEMA_NUVEM = 'portico';
-const cabecalhos = () => ({ apikey:nuvem.chave, Authorization:'Bearer ' + nuvem.chave, 'Content-Type':'application/json', 'Accept-Profile':SCHEMA_NUVEM, 'Content-Profile':SCHEMA_NUVEM });
+const cabecalhos = () => ({ apikey:nuvem.chave, Authorization:'Bearer ' + nuvem.chave, 'Content-Type':'application/json' });
 
 async function puxarNuvem(){
   const r = await fetch(baseNuvem() + '?id=eq.principal&select=dados,carimbo', { headers:cabecalhos() });
@@ -842,6 +863,73 @@ function aplicarBusca(valor){
 }
 campoBusca.addEventListener('input', e => aplicarBusca(e.target.value));
 btnLimparBusca.addEventListener('click', () => { aplicarBusca(''); campoBusca.focus(); });
+/* ---- navegação da biblioteca: setas, barra própria e modo grade ---- */
+const CHAVE_VISAO = 'portico:visao';
+const trilhoEl = document.getElementById('trilho');
+const caixaTrilho = document.getElementById('trilho-caixa');
+const barra = document.getElementById('barra');
+const pino = document.getElementById('pino');
+const setaEsq = document.getElementById('seta-esq');
+const setaDir = document.getElementById('seta-dir');
+const btnVisao = document.getElementById('btn-visao');
+let emGrade = false;
+
+function atualizarBarra(){
+  if(emGrade) return;
+  const total = trilhoEl.scrollWidth, visivel = trilhoEl.clientWidth, pos = trilhoEl.scrollLeft;
+  const rolavel = total - visivel;
+  if(rolavel <= 2){
+    barra.style.visibility = 'hidden';
+    setaEsq.disabled = true; setaDir.disabled = true;
+    return;
+  }
+  barra.style.visibility = 'visible';
+  const larguraPino = Math.max(34, (visivel / total) * barra.clientWidth);
+  pino.style.width = larguraPino + 'px';
+  pino.style.left = ((pos / rolavel) * (barra.clientWidth - larguraPino)) + 'px';
+  setaEsq.disabled = pos < 4;
+  setaDir.disabled = pos > rolavel - 4;
+}
+function passo(dir){ trilhoEl.scrollLeft += dir * Math.max(200, trilhoEl.clientWidth * 0.8); }
+setaEsq.addEventListener('click', () => passo(-1));
+setaDir.addEventListener('click', () => passo(1));
+trilhoEl.addEventListener('scroll', atualizarBarra, {passive:true});
+window.addEventListener('resize', atualizarBarra);
+
+/* arrastar ou clicar na barra percorre a biblioteca */
+function irPorBarra(clientX){
+  const caixa = barra.getBoundingClientRect();
+  const larguraPino = pino.offsetWidth;
+  const fracao = Math.min(1, Math.max(0, (clientX - caixa.left - larguraPino / 2) / (caixa.width - larguraPino)));
+  trilhoEl.scrollLeft = fracao * (trilhoEl.scrollWidth - trilhoEl.clientWidth);
+}
+let arrastando = false;
+barra.addEventListener('pointerdown', e => {
+  arrastando = true; barra.setPointerCapture(e.pointerId);
+  trilhoEl.style.scrollBehavior = 'auto'; irPorBarra(e.clientX);
+});
+barra.addEventListener('pointermove', e => { if(arrastando) irPorBarra(e.clientX); });
+barra.addEventListener('pointerup', e => {
+  arrastando = false; try{ barra.releasePointerCapture(e.pointerId); }catch(err){}
+  trilhoEl.style.scrollBehavior = '';
+});
+
+function aplicarVisao(grade){
+  emGrade = !!grade;
+  trilhoEl.classList.toggle('grade', emGrade);
+  caixaTrilho.classList.toggle('grade-ligada', emGrade);
+  btnVisao.setAttribute('aria-pressed', String(emGrade));
+  btnVisao.textContent = emGrade ? 'Ver em fileira' : 'Ver tudo em grade';
+  try{ localStorage.setItem(CHAVE_VISAO, emGrade ? 'grade' : 'fileira'); }catch(e){}
+  if(!emGrade) atualizarBarra();
+}
+btnVisao.addEventListener('click', () => aplicarVisao(!emGrade));
+(function(){
+  let v = 'fileira';
+  try{ v = localStorage.getItem(CHAVE_VISAO) || 'fileira'; }catch(e){}
+  aplicarVisao(v === 'grade');
+})();
+
 const btnOrdenar = document.getElementById('btn-ordenar');
 btnOrdenar.addEventListener('click', () => {
   estado.ordenarPorUso = !estado.ordenarPorUso;
@@ -1091,6 +1179,7 @@ function desenharLivro(){
 function desenhar(){
   desenharDestaques();
   desenharBiblioteca();
+  if(typeof atualizarBarra === 'function') requestAnimationFrame(atualizarBarra);
   desenharLivro();
   const total = estado.apps.length;
   const sem = estado.apps.filter(a => !a.url).length;
