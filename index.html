@@ -379,7 +379,7 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
       <input id="busca" type="text" name="portico-busca" placeholder="Buscar entre seus apps" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true" data-1p-ignore aria-label="Buscar entre seus apps"><button class="limpar-busca oculto" id="limpar-busca" type="button" aria-label="Limpar a busca">&#10005;</button>
     </div>
     <button class="icone-btn" id="btn-tema" aria-label="Alternar entre claro e escuro" title="Alternar entre claro e escuro"></button>
-    <button class="chip-nuvem" id="chip-nuvem" title="Sincronização entre aparelhos">
+    <button class="chip-nuvem" id="chip-nuvem" title="Clique para sincronizar agora">
       <span class="ponto" id="ponto-nuvem"></span><span id="texto-nuvem">Nuvem desligada</span>
     </button>
     <button class="icone-btn" id="btn-ajustes" aria-label="Ajustes" title="Ajustes">
@@ -536,7 +536,7 @@ grant select, insert, update, delete
 
 <script>
 /* ============ versão e tema ============ */
-const VERSAO = '1.6';
+const VERSAO = '1.7';
 document.getElementById('versao').textContent = 'v' + VERSAO;
 
 const CHAVE_TEMA = 'portico:tema';
@@ -573,7 +573,7 @@ const cofre = {
 };
 
 /* ============ estado ============ */
-let estado = { apps:[], destaque:[], ordenarPorUso:false };
+let estado = { apps:[], destaque:[], destaqueMod:0, ordenarPorUso:false, carimbo:0 };
 let filtro = '';
 
 const novoId = () => 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
@@ -586,10 +586,10 @@ function normalizarUrl(u){
 function dominio(url){ try{ return new URL(url).hostname.replace(/^www\./,''); }catch(e){ return ''; } }
 const inicial = n => (n||'?').trim().charAt(0).toUpperCase();
 const romano = i => ['I','II','III','IV'][i] || '';
-const achar = id => estado.apps.find(a => a.id === id);
+const achar = id => estado.apps.find(a => a.id === id && !a.removido);
 const destacados = () => estado.destaque.map(achar).filter(Boolean);
 function guardados(){
-  let l = estado.apps.filter(a => !estado.destaque.includes(a.id));
+  let l = ativos().filter(a => !estado.destaque.includes(a.id));
   if(estado.ordenarPorUso) l.sort((a,b) => b.aberturas - a.aberturas || a.nome.localeCompare(b.nome,'pt-BR'));
   return l;
 }
@@ -602,20 +602,57 @@ function guardarLocal(){ cofre.gravar(JSON.stringify(estado)); }
 function salvar(){ estado.carimbo = Date.now(); guardarLocal(); agendarEnvio(); }
 
 /* recebe um estado vindo do arquivo, do navegador ou do Supabase */
-function adotar(d){
-  if(!d || !Array.isArray(d.apps)) return false;
-  estado.apps = d.apps.map(a => ({
+/* cada app carrega o momento da sua ultima alteracao; assim dois aparelhos
+   se mesclam app por app, em vez de um sobrescrever a lista inteira do outro */
+function normalizarApp(a, base){
+  return {
     id: a.id || novoId(),
     nome: String(a.nome || '').slice(0,40),
     url: normalizarUrl(a.url || ''),
     icone: typeof a.icone === 'string' ? a.icone : '',
-    aberturas: Number(a.aberturas) || 0
-  }));
-  estado.destaque = Array.isArray(d.destaque) ? d.destaque.filter(id => estado.apps.some(a => a.id === id)).slice(0,4) : [];
+    aberturas: Number(a.aberturas) || 0,
+    mod: Number(a.mod) || base || 0,
+    removido: !!a.removido
+  };
+}
+function adotar(d){
+  if(!d || !Array.isArray(d.apps)) return false;
+  const base = Number(d.carimbo) || 0;
+  estado.apps = d.apps.map(a => normalizarApp(a, base));
+  estado.destaque = Array.isArray(d.destaque)
+    ? d.destaque.filter(id => estado.apps.some(a => a.id === id && !a.removido)).slice(0,4) : [];
+  estado.destaqueMod = Number(d.destaqueMod) || base;
   estado.ordenarPorUso = !!d.ordenarPorUso;
-  estado.carimbo = Number(d.carimbo) || 0;
+  estado.carimbo = base;
   return true;
 }
+/* une as duas listas: para cada app vence a alteracao mais recente */
+function mesclar(local, remoto){
+  const bL = Number(local.carimbo) || 0, bR = Number(remoto.carimbo) || 0;
+  const mapa = new Map();
+  (local.apps || []).forEach(a => { const n = normalizarApp(a, bL); mapa.set(n.id, n); });
+  (remoto.apps || []).forEach(a => {
+    const n = normalizarApp(a, bR), atual = mapa.get(n.id);
+    if(!atual){ mapa.set(n.id, n); return; }
+    const vence = n.mod > atual.mod ? n : atual;
+    vence.aberturas = Math.max(n.aberturas, atual.aberturas);
+    mapa.set(n.id, vence);
+  });
+  const apps = Array.from(mapa.values());
+  const dL = Number(local.destaqueMod) || bL, dR = Number(remoto.destaqueMod) || bR;
+  const fonte = dR > dL ? remoto : local;
+  return {
+    apps,
+    destaque: (fonte.destaque || []).filter(id => apps.some(a => a.id === id && !a.removido)).slice(0,4),
+    destaqueMod: Math.max(dL, dR),
+    ordenarPorUso: (bR > bL ? remoto : local).ordenarPorUso,
+    carimbo: Math.max(bL, bR)
+  };
+}
+function assinatura(){
+  return JSON.stringify(estado.apps.map(a => [a.id,a.nome,a.url,a.removido,a.aberturas,a.icone.length])) + '|' + estado.destaque.join(',');
+}
+const ativos = () => estado.apps.filter(a => !a.removido);
 async function carregar(){
   const bruto = await cofre.ler();
   if(!bruto) return;
@@ -739,10 +776,7 @@ function agendarEnvio(){
   if(!nuvem.ativa) return;
   clearTimeout(relogioEnvio);
   marcarNuvem('ocupada','salvando…');
-  relogioEnvio = setTimeout(async () => {
-    try{ await enviarNuvem(); marcarNuvem('ligada','nuvem em dia'); }
-    catch(e){ marcarNuvem('falha','falha ao salvar'); registrarErro('Falha ao salvar.\n\n' + e.message); }
-  }, 900);
+  relogioEnvio = setTimeout(() => sincronizar(true), 900);
 }
 function marcarNuvem(classe, texto){
   const chip = document.getElementById('chip-nuvem');
@@ -752,20 +786,29 @@ function marcarNuvem(classe, texto){
   selo.className = 'selo-estado ' + (classe === 'ligada' ? 'ligada' : classe === 'falha' ? 'falha' : '');
   selo.textContent = texto;
 }
-async function sincronizarNaAbertura(){
+/* puxa, mescla app por app e devolve o resultado — nunca sobrescreve o outro aparelho */
+let sincronizando = false;
+async function sincronizar(silencioso){
   if(!nuvem.ativa){ marcarNuvem('','nuvem desligada'); return; }
-  marcarNuvem('ocupada','sincronizando…');
+  if(sincronizando) return;
+  sincronizando = true;
+  if(!silencioso) marcarNuvem('ocupada','sincronizando…');
   try{
     const remoto = await puxarNuvem();
-    if(remoto && remoto.dados && (Number(remoto.carimbo) || 0) > (estado.carimbo || 0)){
-      adotar(remoto.dados); guardarLocal(); desenhar();
-    }else if(!remoto){
-      await enviarNuvem();
+    if(remoto && remoto.dados && Array.isArray(remoto.dados.apps)){
+      const antes = assinatura();
+      adotar(mesclar(estado, remoto.dados));
+      estado.carimbo = Date.now();
+      guardarLocal();
+      if(assinatura() !== antes) desenhar();
     }
+    await enviarNuvem();
     marcarNuvem('ligada','nuvem em dia');
   }catch(e){
     marcarNuvem('falha','sem conexão');
-    registrarErro('Falha ao sincronizar na abertura.\n\n' + e.message);
+    registrarErro('Falha ao sincronizar.\n\n' + e.message);
+  }finally{
+    sincronizando = false;
   }
 }
 
@@ -775,34 +818,42 @@ function cadastrar(nome, url, silencioso){
   nome = (nome || '').trim();
   if(!nome) nome = (dominio(url).split('.')[0] || 'Sem nome');
   if(!url && !nome) return null;
-  if(url && estado.apps.some(a => a.url && a.url.toLowerCase() === url.toLowerCase())) return null;
-  const app = { id:novoId(), nome, url, icone:'', aberturas:0 };
+  if(url && ativos().some(a => a.url && a.url.toLowerCase() === url.toLowerCase())) return null;
+  const app = { id:novoId(), nome, url, icone:'', aberturas:0, mod:Date.now(), removido:false };
   estado.apps.push(app);
   if(estado.destaque.length < 4) estado.destaque.push(app.id);
   if(!silencioso){ salvar(); desenhar(); }
   return app;
 }
 function remover(id){
-  estado.apps = estado.apps.filter(a => a.id !== id);
+  const app = estado.apps.find(a => a.id === id);
+  if(app){ app.removido = true; app.mod = Date.now(); }
   estado.destaque = estado.destaque.filter(x => x !== id);
+  estado.destaqueMod = Date.now();
   salvar(); desenhar();
 }
 function abrir(app){
   if(!app.url){ irPara('cadastro'); const alvo = document.querySelector('[data-url-de="'+app.id+'"]'); if(alvo){ alvo.focus(); alvo.scrollIntoView({block:'center'}); } return; }
-  app.aberturas++; salvar(); desenhar();
+  app.aberturas++; app.mod = Date.now(); salvar(); desenhar();
   window.open(app.url, '_blank', 'noopener');
 }
 function promover(id){
   if(estado.destaque.includes(id)) return;
   if(estado.destaque.length >= 4) estado.destaque.pop();
   estado.destaque.push(id);
+  estado.destaqueMod = Date.now();
   salvar(); desenhar();
 }
-function rebaixar(id){ estado.destaque = estado.destaque.filter(x => x !== id); salvar(); desenhar(); }
+function rebaixar(id){
+  estado.destaque = estado.destaque.filter(x => x !== id);
+  estado.destaqueMod = Date.now();
+  salvar(); desenhar();
+}
 function mover(id, passo){
   const i = estado.destaque.indexOf(id), j = i + passo;
   if(i < 0 || j < 0 || j >= estado.destaque.length) return;
   [estado.destaque[i], estado.destaque[j]] = [estado.destaque[j], estado.destaque[i]];
+  estado.destaqueMod = Date.now();
   salvar(); desenhar();
 }
 
@@ -875,21 +926,14 @@ document.getElementById('btn-ajustes').addEventListener('click', () => {
   document.getElementById('nuvem-chave').value = nuvem.chave;
   dlgAjustes.showModal();
 });
-document.getElementById('chip-nuvem').addEventListener('click', () => document.getElementById('btn-ajustes').click());
+document.getElementById('chip-nuvem').addEventListener('click', () => sincronizar());
 document.getElementById('btn-conectar').addEventListener('click', async () => {
   nuvem.url = document.getElementById('nuvem-url').value.trim();
   nuvem.chave = document.getElementById('nuvem-chave').value.trim();
   if(!nuvem.url || !nuvem.chave){ alert('Informe a URL do projeto e a chave anon.'); return; }
   nuvem.ativa = true; gravarConfigNuvem();
-  marcarNuvem('ocupada','enviando…');
-  try{
-    estado.carimbo = Date.now(); guardarLocal();
-    await enviarNuvem();
-    marcarNuvem('ligada','nuvem em dia');
-  }catch(e){
-    marcarNuvem('falha','falha ao salvar');
-    registrarErro('Não consegui gravar no Supabase.\n\n' + e.message);
-  }
+  estado.carimbo = Date.now(); guardarLocal();
+  await sincronizar();
 });
 document.getElementById('btn-puxar').addEventListener('click', async () => {
   if(!nuvem.url || !nuvem.chave){ alert('Informe a URL do projeto e a chave anon.'); return; }
@@ -897,8 +941,10 @@ document.getElementById('btn-puxar').addEventListener('click', async () => {
   marcarNuvem('ocupada','puxando…');
   try{
     const remoto = await puxarNuvem();
-    if(!remoto){ marcarNuvem('ligada','nuvem vazia'); alert('Ainda não há nada gravado na nuvem.'); return; }
-    adotar(remoto.dados); guardarLocal(); desenhar();
+    if(!remoto){ marcarNuvem('ligada','nuvem vazia'); registrarErro('Ainda não há nada gravado na nuvem.'); return; }
+    adotar(mesclar(estado, remoto.dados)); estado.carimbo = Date.now();
+    guardarLocal(); desenhar();
+    await enviarNuvem();
     marcarNuvem('ligada','nuvem em dia');
   }catch(e){
     marcarNuvem('falha','falha ao puxar');
@@ -948,7 +994,9 @@ arquivo.addEventListener('change', () => {
 });
 document.getElementById('btn-limpar').addEventListener('click', () => {
   if(confirm('Apagar todos os apps cadastrados? Isso não pode ser desfeito.')){
-    estado.apps = []; estado.destaque = [];
+    const agora = Date.now();
+    estado.apps.forEach(a => { a.removido = true; a.mod = agora; });
+    estado.destaque = []; estado.destaqueMod = agora;
     salvar(); desenhar(); dlgAjustes.close();
   }
 });
@@ -1086,7 +1134,7 @@ function receberImagem(app, arquivoImg){
       let dados = '';
       try{ dados = tela.toDataURL('image/webp', .85); }catch(e){}
       if(!dados || dados.indexOf('image/webp') < 0) dados = tela.toDataURL('image/png');
-      app.icone = dados;
+      app.icone = dados; app.mod = Date.now();
       salvar(); desenhar();
     };
     img.onerror = () => alert('Não consegui ler essa imagem. Tente um arquivo PNG, JPG ou SVG.');
@@ -1179,7 +1227,7 @@ function desenharBiblioteca(){
     const p = document.createElement('p');
     p.className = 'sem-resultado';
     p.textContent = filtro ? 'Nada encontrado para \u201c' + filtro + '\u201d. Use o \u2715 na busca para limpar.'
-      : (estado.apps.length ? 'Todos os apps cadastrados estão sob o arco.' : 'Nenhum app cadastrado ainda. Abra o Cadastro e comece pelo primeiro.');
+      : (ativos().length ? 'Todos os apps cadastrados estão sob o arco.' : 'Nenhum app cadastrado ainda. Abra o Cadastro e comece pelo primeiro.');
     trilho.appendChild(p);
     return;
   }
@@ -1213,7 +1261,7 @@ function desenharBiblioteca(){
 function desenharLivro(){
   const corpo = document.getElementById('livro-corpo');
   corpo.innerHTML = '';
-  const lista = estado.apps.filter(passaFiltro);
+  const lista = ativos().filter(passaFiltro);
   if(!lista.length){
     const v = document.createElement('div');
     v.className = 'livro-vazio';
@@ -1232,7 +1280,7 @@ function desenharLivro(){
     inNome.setAttribute('aria-label','Nome do app');
     inNome.addEventListener('change', () => {
       app.nome = inNome.value.trim() || (dominio(app.url).split('.')[0] || 'Sem nome');
-      salvar(); desenhar();
+      app.mod = Date.now(); salvar(); desenhar();
     });
     celNome.appendChild(inNome);
     linha.appendChild(celNome);
@@ -1244,7 +1292,7 @@ function desenharLivro(){
     inUrl.placeholder = 'informe o endereço';
     inUrl.setAttribute('aria-label','Endereço do app');
     inUrl.setAttribute('data-url-de', app.id);
-    inUrl.addEventListener('change', () => { app.url = normalizarUrl(inUrl.value); salvar(); desenhar(); });
+    inUrl.addEventListener('change', () => { app.url = normalizarUrl(inUrl.value); app.mod = Date.now(); salvar(); desenhar(); });
     celUrl.appendChild(inUrl);
     linha.appendChild(celUrl);
 
@@ -1263,7 +1311,7 @@ function desenharLivro(){
     }else{
       acoes.appendChild(botao('&#9650;','Pôr em destaque', () => promover(app.id)));
     }
-    if(app.icone) acoes.appendChild(botao('&#8856;','Remover a imagem enviada', () => { app.icone = ''; salvar(); desenhar(); }));
+    if(app.icone) acoes.appendChild(botao('&#8856;','Remover a imagem enviada', () => { app.icone = ''; app.mod = Date.now(); salvar(); desenhar(); }));
     acoes.appendChild(botao('&#8599;','Abrir', () => abrir(app)));
     acoes.appendChild(botao('&#10005;','Remover do cadastro', () => {
       if(confirm('Remover "' + app.nome + '" do cadastro?')) remover(app.id);
@@ -1272,7 +1320,7 @@ function desenharLivro(){
 
     corpo.appendChild(linha);
   });
-  const total = estado.apps.length;
+  const total = ativos().length;
   document.getElementById('nota-cadastro').textContent = total + (total === 1 ? ' app' : ' apps');
   document.getElementById('tot-aba').textContent = total;
 }
@@ -1282,8 +1330,8 @@ function desenhar(){
   desenharBiblioteca();
   if(typeof atualizarBarra === 'function') requestAnimationFrame(atualizarBarra);
   desenharLivro();
-  const total = estado.apps.length;
-  const sem = estado.apps.filter(a => !a.url).length;
+  const total = ativos().length;
+  const sem = ativos().filter(a => !a.url).length;
   document.getElementById('resumo').textContent =
     total + (total === 1 ? ' app reunido' : ' apps reunidos') + (sem ? ' · ' + sem + ' sem endereço' : '');
 }
@@ -1316,7 +1364,11 @@ const SELO_512 = 'data:image/webp;base64,UklGRobEAABXRUJQVlA4WAoAAAAQAAAA/wEA/wE
 })();
 
 lerConfigNuvem();
-carregar().then(() => { desenhar(); sincronizarNaAbertura(); });
+carregar().then(() => { desenhar(); sincronizar(); });
+
+/* ao voltar para a aba ou para o app, confere o que os outros aparelhos fizeram */
+document.addEventListener('visibilitychange', () => { if(!document.hidden) sincronizar(true); });
+window.addEventListener('focus', () => sincronizar(true));
 </script>
 </body>
 </html>
