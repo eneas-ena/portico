@@ -236,6 +236,8 @@ body::after{
   position:absolute;top:12px;right:14px;font-family:var(--sans);font-size:9px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--ouro-2);border:1px dashed rgba(var(--ouro-rgb),.5);padding:3px 7px;
 }
+.pendente.local{color:#E0B169;border-color:rgba(224,177,105,.55);border-style:solid}
+.linha input.alerta{border-color:rgba(224,177,105,.6);background:rgba(224,177,105,.07)}
 .vazia{border-style:dashed;border-color:rgba(var(--frio-rgb),.28);background:rgba(var(--elev-rgb),.012);color:var(--nevoa);justify-content:center;gap:12px}
 .vazia:hover{border-color:rgba(var(--ouro-rgb),.5)}
 .vazia .sinal{font-family:"Cinzel",serif;font-size:30px;color:rgba(var(--ouro-rgb),.6)}
@@ -554,7 +556,7 @@ grant select, insert, update, delete
 
 <script>
 /* ============ versão e tema ============ */
-const VERSAO = '1.8';
+const VERSAO = '1.9';
 document.getElementById('versao').textContent = 'v' + VERSAO;
 
 /* ---- atualizacao do app ----
@@ -657,6 +659,11 @@ function normalizarUrl(u){
 }
 function dominio(url){ try{ return new URL(url).hostname.replace(/^www\./,''); }catch(e){ return ''; } }
 const inicial = n => (n||'?').trim().charAt(0).toUpperCase();
+/* localhost, 127.0.0.1 e afins so abrem no computador onde o app foi criado */
+function urlLocal(url){
+  const d = dominio(url);
+  return !!d && (d === 'localhost' || d.startsWith('127.') || d.endsWith('.local') || d === '0.0.0.0');
+}
 const romano = i => ['I','II','III','IV'][i] || '';
 const achar = id => estado.apps.find(a => a.id === id && !a.removido);
 const destacados = () => estado.destaque.map(achar).filter(Boolean);
@@ -906,7 +913,9 @@ function remover(id){
 }
 function abrir(app){
   if(!app.url){ irPara('cadastro'); const alvo = document.querySelector('[data-url-de="'+app.id+'"]'); if(alvo){ alvo.focus(); alvo.scrollIntoView({block:'center'}); } return; }
-  app.aberturas++; app.mod = Date.now(); salvar(); desenhar();
+  /* o contador sobe sozinho; 'mod' fica reservado para edicoes de verdade,
+     senao so abrir um app num aparelho sobrepoe o endereco corrigido no outro */
+  app.aberturas++; salvar(); desenhar();
   window.open(app.url, '_blank', 'noopener');
 }
 function promover(id){
@@ -1222,10 +1231,18 @@ function botao(txt, titulo, acao){
   return b;
 }
 function selo(app){
-  if(app.url) return null;
-  const s = document.createElement('span');
-  s.className = 'pendente'; s.textContent = 'sem endereço';
-  return s;
+  if(!app.url){
+    const s = document.createElement('span');
+    s.className = 'pendente'; s.textContent = 'sem endereço';
+    return s;
+  }
+  if(urlLocal(app.url)){
+    const s = document.createElement('span');
+    s.className = 'pendente local'; s.textContent = 'só neste computador';
+    s.title = 'Endereço local: não abre em outro aparelho. Troque pelo endereço publicado.';
+    return s;
+  }
+  return null;
 }
 const plural = n => n === 1 ? '1 abertura' : n + ' aberturas';
 
@@ -1365,6 +1382,10 @@ function desenharLivro(){
     inUrl.placeholder = 'informe o endereço';
     inUrl.setAttribute('aria-label','Endereço do app');
     inUrl.setAttribute('data-url-de', app.id);
+    if(urlLocal(app.url)){
+      inUrl.classList.add('alerta');
+      inUrl.title = 'Endereço local: só abre no computador onde o app roda. Troque pelo endereço publicado.';
+    }
     inUrl.addEventListener('change', () => { app.url = normalizarUrl(inUrl.value); app.mod = Date.now(); salvar(); desenhar(); });
     celUrl.appendChild(inUrl);
     linha.appendChild(celUrl);
