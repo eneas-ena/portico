@@ -536,7 +536,7 @@ grant select, insert, update, delete
 
 <script>
 /* ============ versão e tema ============ */
-const VERSAO = '1.5';
+const VERSAO = '1.6';
 document.getElementById('versao').textContent = 'v' + VERSAO;
 
 const CHAVE_TEMA = 'portico:tema';
@@ -626,8 +626,8 @@ async function carregar(){
 const CHAVE_NUVEM = 'portico:nuvem';
 /* Projeto Supabase do Pórtico — já vem preenchido em qualquer aparelho */
 const NUVEM_PADRAO = {
-  url: 'https://mwlcfvkvcwmbsvtvjlkj.supabase.co',
-  chave: 'sb_publishable_FHhhK6oMy1fp4dOfx1NVgg_GCbB1EKJ'
+  url: 'https://ghjbljypxksubmcsvaig.supabase.co',
+  chave: 'sb_publishable_qXCYqg1WdmelY9D1mptZXg_U8NdoKby'
 };
 let nuvem = { url:NUVEM_PADRAO.url, chave:NUVEM_PADRAO.chave, ativa:true };
 let relogioEnvio = null;
@@ -639,6 +639,12 @@ function lerConfigNuvem(){
     const t = localStorage.getItem(CHAVE_NUVEM);
     if(t){
       const d = JSON.parse(t);
+      /* credenciais gravadas de um projeto que nao e mais o do arquivo sao descartadas */
+      if(d.projeto !== NUVEM_PADRAO.url){
+        nuvem.ativa = true;
+        gravarConfigNuvem();
+        return;
+      }
       if(d.url) nuvem.url = d.url;
       if(d.chave) nuvem.chave = d.chave;
       nuvem.ativa = d.ativa === false ? false : !!(nuvem.url && nuvem.chave);
@@ -647,7 +653,7 @@ function lerConfigNuvem(){
   }catch(e){}
   nuvem.ativa = !!(nuvem.url && nuvem.chave);
 }
-function gravarConfigNuvem(){ try{ localStorage.setItem(CHAVE_NUVEM, JSON.stringify(nuvem)); }catch(e){} }
+function gravarConfigNuvem(){ try{ localStorage.setItem(CHAVE_NUVEM, JSON.stringify(Object.assign({projeto:NUVEM_PADRAO.url}, nuvem))); }catch(e){} }
 const baseNuvem = () => nuvem.url.replace(/\/+$/,'') + '/rest/v1/portico_estado';
 /* Chave nova (sb_publishable_...) nao e um JWT: mandar como Bearer faz o
    PostgREST tentar decodificar e devolver 401. So o cabecalho apikey vai nesse caso. */
