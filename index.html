@@ -556,7 +556,7 @@ grant select, insert, update, delete
 
 <script>
 /* ============ versão e tema ============ */
-const VERSAO = '1.9';
+const VERSAO = '2.0';
 document.getElementById('versao').textContent = 'v' + VERSAO;
 
 /* ---- atualizacao do app ----
@@ -870,6 +870,7 @@ let sincronizando = false;
 async function sincronizar(silencioso){
   if(!nuvem.ativa){ marcarNuvem('','nuvem desligada'); return; }
   if(sincronizando) return;
+  if(emEdicao()){ clearTimeout(relogioEnvio); relogioEnvio = setTimeout(() => sincronizar(silencioso), 1500); return; }
   sincronizando = true;
   if(!silencioso) marcarNuvem('ocupada','sincronizando…');
   try{
@@ -1348,6 +1349,26 @@ function desenharBiblioteca(){
   });
 }
 
+/* grava enquanto digita (com folga), busca o app pelo id — nunca por uma
+   referencia antiga que a sincronizacao possa ter trocado — e so redesenha ao sair */
+function ligarCampo(campo, id, aplicar){
+  let relogio = null;
+  const gravar = () => {
+    const alvo = estado.apps.find(a => a.id === id);
+    if(!alvo) return;
+    aplicar(alvo, campo.value);
+    alvo.mod = Date.now();
+    salvar();
+  };
+  campo.addEventListener('input', () => { clearTimeout(relogio); relogio = setTimeout(gravar, 500); });
+  campo.addEventListener('change', () => { clearTimeout(relogio); gravar(); });
+  campo.addEventListener('blur', () => {
+    clearTimeout(relogio); gravar();
+    setTimeout(() => { if(redesenhoPendente || !emEdicao()) desenhar(); }, 60);
+  });
+  campo.addEventListener('keydown', e => { if(e.key === 'Enter') campo.blur(); });
+}
+
 function desenharLivro(){
   const corpo = document.getElementById('livro-corpo');
   corpo.innerHTML = '';
@@ -1368,9 +1389,8 @@ function desenharLivro(){
     const inNome = document.createElement('input');
     inNome.className = 'nome-in'; inNome.value = app.nome; inNome.maxLength = 34;
     inNome.setAttribute('aria-label','Nome do app');
-    inNome.addEventListener('change', () => {
-      app.nome = inNome.value.trim() || (dominio(app.url).split('.')[0] || 'Sem nome');
-      app.mod = Date.now(); salvar(); desenhar();
+    ligarCampo(inNome, app.id, (alvo, valor) => {
+      alvo.nome = valor.trim() || (dominio(alvo.url).split('.')[0] || 'Sem nome');
     });
     celNome.appendChild(inNome);
     linha.appendChild(celNome);
@@ -1386,7 +1406,7 @@ function desenharLivro(){
       inUrl.classList.add('alerta');
       inUrl.title = 'Endereço local: só abre no computador onde o app roda. Troque pelo endereço publicado.';
     }
-    inUrl.addEventListener('change', () => { app.url = normalizarUrl(inUrl.value); app.mod = Date.now(); salvar(); desenhar(); });
+    ligarCampo(inUrl, app.id, (alvo, valor) => { alvo.url = normalizarUrl(valor); });
     celUrl.appendChild(inUrl);
     linha.appendChild(celUrl);
 
@@ -1419,7 +1439,16 @@ function desenharLivro(){
   document.getElementById('tot-aba').textContent = total;
 }
 
+/* Enquanto um campo da tabela esta em uso, redesenhar destruiria o input
+   e devolveria o valor antigo — era isso que apagava a alteracao. */
+function emEdicao(){
+  const a = document.activeElement;
+  return !!(a && a.closest && a.closest('#livro-corpo'));
+}
+let redesenhoPendente = false;
 function desenhar(){
+  if(emEdicao()){ redesenhoPendente = true; return; }
+  redesenhoPendente = false;
   desenharDestaques();
   desenharBiblioteca();
   if(typeof atualizarBarra === 'function') requestAnimationFrame(atualizarBarra);
