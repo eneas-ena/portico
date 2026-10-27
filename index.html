@@ -144,6 +144,17 @@ body::after{
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
 }
 .sql .obs{color:rgba(var(--frio-rgb),.65)}
+.aviso-versao{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  margin:16px 0 -10px;padding:13px 16px;
+  border:1px solid rgba(var(--ouro-rgb),.55);border-radius:var(--raio);
+  background:rgba(var(--ouro-rgb),.09);
+  font-family:var(--sans);font-size:12px;letter-spacing:.04em;color:var(--marfim);
+  animation:surgir .35s ease-out both;
+}
+@keyframes surgir{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.aviso-versao span{flex:1;min-width:180px}
+.aviso-versao .icone-btn{width:32px;height:32px;font-size:12px}
 .erro-nuvem{
   margin:14px 0 0;padding:12px;white-space:pre-wrap;word-break:break-word;
   background:rgba(172,71,50,.08);border:1px solid rgba(172,71,50,.4);border-radius:var(--raio);
@@ -387,6 +398,12 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
     </button>
   </header>
 
+  <div class="aviso-versao oculto" id="aviso-versao">
+    <span id="aviso-versao-txt"></span>
+    <button class="btn solido" id="btn-atualizar-agora">Atualizar agora</button>
+    <button class="icone-btn" id="btn-adiar" aria-label="Agora não" title="Agora não">&#10005;</button>
+  </div>
+
   <!-- ================= PÓRTICO ================= -->
   <main id="vista-portico">
     <section class="abertura">
@@ -524,6 +541,7 @@ grant select, insert, update, delete
     </div>
 
     <div class="lista-ajustes">
+      <button class="btn mudo" id="btn-atualizar-app">Atualizar o app (buscar versão nova)</button>
       <button class="btn mudo" id="btn-exportar">Exportar lista (arquivo .json)</button>
       <button class="btn mudo" id="btn-importar">Importar lista de um arquivo</button>
       <button class="btn mudo perigo" id="btn-limpar">Apagar tudo e recomeçar</button>
@@ -536,8 +554,51 @@ grant select, insert, update, delete
 
 <script>
 /* ============ versão e tema ============ */
-const VERSAO = '1.7';
+const VERSAO = '1.8';
 document.getElementById('versao').textContent = 'v' + VERSAO;
+
+/* ---- atualizacao do app ----
+   O iPad guarda a pagina instalada por muito tempo. Aqui o proprio app vai buscar
+   o arquivo publicado, compara o numero da versao e avisa quando ha uma nova. */
+const endereco = () => location.href.split('?')[0].split('#')[0];
+
+async function atualizarApp(){
+  try{
+    if(window.caches){
+      const chaves = await caches.keys();
+      await Promise.all(chaves.map(k => caches.delete(k)));
+    }
+  }catch(e){}
+  try{
+    if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  }catch(e){}
+  location.replace(endereco() + '?atualizado=' + Date.now());
+}
+
+let ultimaChecagem = 0;
+async function verificarVersao(forcado){
+  const agora = Date.now();
+  if(!forcado && agora - ultimaChecagem < 600000) return;
+  ultimaChecagem = agora;
+  try{
+    const r = await fetch(endereco() + '?checar=' + agora, { cache:'no-store' });
+    if(!r.ok) return;
+    const texto = await r.text();
+    const m = /const VERSAO = '([^']+)'/.exec(texto);
+    if(!m) return;
+    if(m[1] !== VERSAO && m[1] !== dispensada) mostrarAvisoVersao(m[1]);
+  }catch(e){}
+}
+let dispensada = '';
+function mostrarAvisoVersao(nova){
+  const cx = document.getElementById('aviso-versao');
+  document.getElementById('aviso-versao-txt').textContent =
+    'Versão ' + nova + ' disponível — você está na ' + VERSAO + '.';
+  cx.classList.remove('oculto');
+}
 
 const CHAVE_TEMA = 'portico:tema';
 const SOL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.4v2.4M12 19.2v2.4M2.4 12h2.4M19.2 12h2.4M5.2 5.2l1.7 1.7M17.1 17.1l1.7 1.7M18.8 5.2l-1.7 1.7M6.9 17.1l-1.7 1.7"/></svg>';
@@ -558,6 +619,17 @@ function aplicarTema(tema){
 document.getElementById('btn-tema').addEventListener('click', () => {
   aplicarTema(document.documentElement.getAttribute('data-tema') === 'claro' ? 'escuro' : 'claro');
 });
+document.getElementById('btn-atualizar-agora').addEventListener('click', atualizarApp);
+document.getElementById('btn-adiar').addEventListener('click', () => {
+  const t = document.getElementById('aviso-versao-txt').textContent;
+  const m = /Versão ([^\s]+) /.exec(t);
+  if(m) dispensada = m[1];
+  document.getElementById('aviso-versao').classList.add('oculto');
+});
+/* tira da barra de endereço a marca deixada pela atualização */
+if(location.search.indexOf('atualizado=') >= 0){
+  try{ history.replaceState(null, '', location.pathname); }catch(e){}
+}
 
 /* ============ armazenamento ============ */
 const CHAVE = 'portico:v1';
@@ -972,6 +1044,7 @@ document.getElementById('btn-copiar-sql').addEventListener('click', async () => 
   catch(e){ btn.textContent = 'Selecione e copie'; }
   setTimeout(() => { btn.textContent = 'Copiar SQL'; }, 2200);
 });
+document.getElementById('btn-atualizar-app').addEventListener('click', atualizarApp);
 document.getElementById('btn-fechar-ajustes').addEventListener('click', () => dlgAjustes.close());
 document.getElementById('btn-exportar').addEventListener('click', () => {
   const a = document.createElement('a');
@@ -1367,8 +1440,9 @@ lerConfigNuvem();
 carregar().then(() => { desenhar(); sincronizar(); });
 
 /* ao voltar para a aba ou para o app, confere o que os outros aparelhos fizeram */
-document.addEventListener('visibilitychange', () => { if(!document.hidden) sincronizar(true); });
-window.addEventListener('focus', () => sincronizar(true));
+document.addEventListener('visibilitychange', () => { if(!document.hidden){ sincronizar(true); verificarVersao(); } });
+window.addEventListener('focus', () => { sincronizar(true); verificarVersao(); });
+setTimeout(() => verificarVersao(true), 2500);
 </script>
 </body>
 </html>
