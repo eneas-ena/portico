@@ -144,6 +144,17 @@ body::after{
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
 }
 .sql .obs{color:rgba(var(--frio-rgb),.65)}
+.erro-nuvem{
+  margin:14px 0 0;padding:12px;white-space:pre-wrap;word-break:break-word;
+  background:rgba(172,71,50,.08);border:1px solid rgba(172,71,50,.4);border-radius:var(--raio);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.6;color:var(--marfim);
+  max-height:220px;overflow:auto;
+}
+.ver-chave{
+  background:none;border:none;color:var(--ouro-2);cursor:pointer;font-family:var(--sans);
+  font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;padding:0 0 0 10px;
+}
+.ver-chave:hover{text-decoration:underline}
 .icone-btn{
   width:38px;height:38px;display:grid;place-items:center;background:transparent;
   border:1px solid rgba(var(--frio-rgb),.22);border-radius:var(--raio);color:var(--nevoa);cursor:pointer;transition:.2s;flex:none;
@@ -478,14 +489,16 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
         <input id="nuvem-url" type="url" spellcheck="false" placeholder="https://seuprojeto.supabase.co">
       </div>
       <div class="campo">
-        <label for="nuvem-chave">Chave anon (public)</label>
+        <label for="nuvem-chave">Chave publishable <button type="button" class="ver-chave" id="ver-chave">mostrar</button></label>
         <input id="nuvem-chave" type="text" class="mascarado" name="portico-chave" spellcheck="false" autocomplete="off" data-form-type="other" data-lpignore="true" data-1p-ignore placeholder="sb_publishable_...">
       </div>
       <div class="linha-acao" style="margin-top:12px">
-        <button class="btn mudo esq" id="btn-puxar">Puxar da nuvem</button>
+        <button class="btn mudo esq" id="btn-testar">Testar conexão</button>
+        <button class="btn mudo" id="btn-puxar">Puxar da nuvem</button>
         <button class="btn mudo" id="btn-desconectar">Desligar</button>
         <button class="btn solido" id="btn-conectar">Ligar e enviar</button>
       </div>
+      <pre class="erro-nuvem oculto" id="erro-nuvem"></pre>
       <details class="sql" open>
         <summary>Tabela exigida no Supabase (rode uma vez)</summary>
         <p>Abra o SQL Editor do seu projeto e rode este comando. Sem essa tabela, a sincronização acusa falha:</p>
@@ -497,8 +510,14 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
 
 alter table portico_estado enable row level security;
 
+drop policy if exists "portico_acesso" on portico_estado;
+
 create policy "portico_acesso" on portico_estado
-  for all to anon using (true) with check (true);</pre>
+  for all to anon, authenticated
+  using (true) with check (true);
+
+grant select, insert, update, delete
+  on portico_estado to anon, authenticated;</pre>
         <button class="btn mudo" id="btn-copiar-sql" style="margin-top:10px">Copiar SQL</button>
         <p class="obs">Essa política deixa quem tiver a chave anon ler e gravar a tabela. Como aqui só ficam nomes e endereços dos seus apps, é um risco pequeno — mas não guarde nada sigiloso nela.</p>
       </details>
@@ -517,7 +536,7 @@ create policy "portico_acesso" on portico_estado
 
 <script>
 /* ============ versão e tema ============ */
-const VERSAO = '1.4';
+const VERSAO = '1.5';
 document.getElementById('versao').textContent = 'v' + VERSAO;
 
 const CHAVE_TEMA = 'portico:tema';
@@ -630,21 +649,85 @@ function lerConfigNuvem(){
 }
 function gravarConfigNuvem(){ try{ localStorage.setItem(CHAVE_NUVEM, JSON.stringify(nuvem)); }catch(e){} }
 const baseNuvem = () => nuvem.url.replace(/\/+$/,'') + '/rest/v1/portico_estado';
-const cabecalhos = () => ({ apikey:nuvem.chave, Authorization:'Bearer ' + nuvem.chave, 'Content-Type':'application/json' });
+/* Chave nova (sb_publishable_...) nao e um JWT: mandar como Bearer faz o
+   PostgREST tentar decodificar e devolver 401. So o cabecalho apikey vai nesse caso. */
+function cabecalhos(){
+  const c = { apikey:nuvem.chave, 'Content-Type':'application/json' };
+  if(/^ey[A-Za-z0-9_-]/.test(nuvem.chave)) c.Authorization = 'Bearer ' + nuvem.chave;
+  return c;
+}
+/* guarda o ultimo erro para exibir na tela, em vez de so dizer "falha" */
+let ultimoErro = '';
+function registrarErro(txt){
+  ultimoErro = txt || '';
+  const cx = document.getElementById('erro-nuvem');
+  if(!cx) return;
+  cx.textContent = ultimoErro;
+  cx.classList.toggle('oculto', !ultimoErro);
+}
+function descrever(status, corpo){
+  const c = (corpo || '').slice(0,400);
+  let pista = '';
+  if(status === 401 || status === 403) pista = 'Chave recusada ou a politica (RLS) nao permite gravar. Rode o SQL novamente.';
+  else if(status === 404) pista = 'A tabela portico_estado nao existe neste projeto. Rode o SQL.';
+  else if(status === 413) pista = 'Os dados ficaram grandes demais para um envio so.';
+  else if(status === 0) pista = 'Nao houve resposta: projeto pausado, URL errada ou sem internet.';
+  return 'HTTP ' + status + (pista ? ' — ' + pista : '') + (c ? '\n\n' + c : '');
+}
 
 async function puxarNuvem(){
-  const r = await fetch(baseNuvem() + '?id=eq.principal&select=dados,carimbo', { headers:cabecalhos() });
-  if(!r.ok) throw new Error('HTTP ' + r.status + ' — ' + (await r.text()).slice(0,140));
+  let r;
+  try{ r = await fetch(baseNuvem() + '?id=eq.principal&select=dados,carimbo', { headers:cabecalhos() }); }
+  catch(e){ throw new Error(descrever(0, e.message)); }
+  if(!r.ok) throw new Error(descrever(r.status, await r.text()));
   const linhas = await r.json();
   return linhas[0] || null;
 }
 async function enviarNuvem(){
-  const r = await fetch(baseNuvem(), {
-    method:'POST',
-    headers: Object.assign(cabecalhos(), { Prefer:'resolution=merge-duplicates,return=minimal' }),
-    body: JSON.stringify([{ id:'principal', dados:estado, carimbo:estado.carimbo || Date.now() }])
-  });
-  if(!r.ok) throw new Error('HTTP ' + r.status + ' — ' + (await r.text()).slice(0,140));
+  const corpo = JSON.stringify([{ id:'principal', dados:estado, carimbo:estado.carimbo || Date.now() }]);
+  let r;
+  try{
+    r = await fetch(baseNuvem(), {
+      method:'POST',
+      headers: Object.assign(cabecalhos(), { Prefer:'resolution=merge-duplicates,return=minimal' }),
+      body: corpo
+    });
+  }catch(e){ throw new Error(descrever(0, e.message)); }
+  if(!r.ok) throw new Error(descrever(r.status, await r.text()) + '\n\nTamanho enviado: ' + Math.round(corpo.length/1024) + ' KB');
+  registrarErro('');
+}
+/* teste direto: diz exatamente o que o Supabase respondeu */
+async function testarNuvem(){
+  registrarErro('');
+  marcarNuvem('ocupada','testando…');
+  const partes = [];
+  partes.push('URL: ' + nuvem.url);
+  partes.push('Chave: ' + nuvem.chave.slice(0,22) + '… (' + nuvem.chave.length + ' caracteres)');
+  partes.push('Formato da chave: ' + (/^ey[A-Za-z0-9_-]/.test(nuvem.chave) ? 'JWT antigo (vai como Bearer)' : 'publishable nova (so apikey)'));
+  try{
+    const r = await fetch(baseNuvem() + '?select=id&limit=1', { headers:cabecalhos() });
+    const t = await r.text();
+    partes.push('Leitura: HTTP ' + r.status + (r.ok ? ' — tabela encontrada' : ''));
+    if(!r.ok) partes.push(descrever(r.status, t));
+    else{
+      const p = await fetch(baseNuvem(), {
+        method:'POST',
+        headers: Object.assign(cabecalhos(), { Prefer:'resolution=merge-duplicates,return=minimal' }),
+        body: JSON.stringify([{ id:'teste', dados:{ teste:true }, carimbo:Date.now() }])
+      });
+      partes.push('Gravacao: HTTP ' + p.status + (p.ok ? ' — permitida' : ''));
+      if(!p.ok) partes.push(descrever(p.status, await p.text()));
+      else{
+        await fetch(baseNuvem() + '?id=eq.teste', { method:'DELETE', headers:cabecalhos() });
+        partes.push('Tudo certo: leitura e gravacao funcionando.');
+      }
+    }
+    marcarNuvem(r.ok ? 'ligada' : 'falha', r.ok ? 'nuvem em dia' : 'falha no teste');
+  }catch(e){
+    partes.push(descrever(0, e.message));
+    marcarNuvem('falha','sem resposta');
+  }
+  registrarErro(partes.join('\n'));
 }
 function agendarEnvio(){
   if(!nuvem.ativa) return;
@@ -652,7 +735,7 @@ function agendarEnvio(){
   marcarNuvem('ocupada','salvando…');
   relogioEnvio = setTimeout(async () => {
     try{ await enviarNuvem(); marcarNuvem('ligada','nuvem em dia'); }
-    catch(e){ marcarNuvem('falha','falha ao salvar'); }
+    catch(e){ marcarNuvem('falha','falha ao salvar'); registrarErro('Falha ao salvar.\n\n' + e.message); }
   }, 900);
 }
 function marcarNuvem(classe, texto){
@@ -676,6 +759,7 @@ async function sincronizarNaAbertura(){
     marcarNuvem('ligada','nuvem em dia');
   }catch(e){
     marcarNuvem('falha','sem conexão');
+    registrarErro('Falha ao sincronizar na abertura.\n\n' + e.message);
   }
 }
 
@@ -797,8 +881,8 @@ document.getElementById('btn-conectar').addEventListener('click', async () => {
     await enviarNuvem();
     marcarNuvem('ligada','nuvem em dia');
   }catch(e){
-    marcarNuvem('falha','falha: verifique a tabela');
-    alert('Não consegui gravar no Supabase.\n\n' + e.message + '\n\nConfira se a tabela portico_estado foi criada com o SQL indicado.');
+    marcarNuvem('falha','falha ao salvar');
+    registrarErro('Não consegui gravar no Supabase.\n\n' + e.message);
   }
 });
 document.getElementById('btn-puxar').addEventListener('click', async () => {
@@ -812,8 +896,19 @@ document.getElementById('btn-puxar').addEventListener('click', async () => {
     marcarNuvem('ligada','nuvem em dia');
   }catch(e){
     marcarNuvem('falha','falha ao puxar');
-    alert('Não consegui ler do Supabase.\n\n' + e.message);
+    registrarErro('Não consegui ler do Supabase.\n\n' + e.message);
   }
+});
+document.getElementById('btn-testar').addEventListener('click', () => {
+  nuvem.url = document.getElementById('nuvem-url').value.trim() || nuvem.url;
+  nuvem.chave = document.getElementById('nuvem-chave').value.trim() || nuvem.chave;
+  testarNuvem();
+});
+document.getElementById('ver-chave').addEventListener('click', () => {
+  const c = document.getElementById('nuvem-chave');
+  const btn = document.getElementById('ver-chave');
+  const escondida = c.classList.toggle('mascarado');
+  btn.textContent = escondida ? 'mostrar' : 'ocultar';
 });
 document.getElementById('btn-desconectar').addEventListener('click', () => {
   nuvem.ativa = false; gravarConfigNuvem();
