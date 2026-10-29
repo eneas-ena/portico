@@ -154,6 +154,7 @@ body::after{
 }
 @keyframes surgir{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .aviso-versao span{flex:1;min-width:180px}
+.aviso-versao.alerta{border-color:rgba(224,177,105,.6);background:rgba(224,177,105,.1)}
 .aviso-versao .icone-btn{width:32px;height:32px;font-size:12px}
 .erro-nuvem{
   margin:14px 0 0;padding:12px;white-space:pre-wrap;word-break:break-word;
@@ -335,6 +336,7 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
 .perigo:hover{background:rgba(172,71,50,.12);border-color:var(--erro)}
 .lista-ajustes{display:flex;flex-direction:column;gap:10px}
 .lista-ajustes button{width:100%;text-align:left;padding:14px 16px;font-size:11px}
+.medida{font-family:var(--sans);font-size:11px;color:rgba(var(--frio-rgb),.75);margin:0 0 4px}
 .aviso{font-family:var(--sans);font-size:11.5px;line-height:1.6;color:rgba(var(--frio-rgb),.8);border-left:1px solid rgba(var(--ouro-rgb),.4);padding-left:12px;margin-top:22px}
 
 .rodape-pagina{
@@ -399,6 +401,10 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
     </button>
   </header>
+
+  <div class="aviso-versao alerta oculto" id="aviso-espaco">
+    <span id="aviso-espaco-txt"></span>
+  </div>
 
   <div class="aviso-versao oculto" id="aviso-versao">
     <span id="aviso-versao-txt"></span>
@@ -543,6 +549,7 @@ grant select, insert, update, delete
     </div>
 
     <div class="lista-ajustes">
+      <p class="medida" id="medida-lista"></p>
       <button class="btn mudo" id="btn-atualizar-app">Atualizar o app (buscar versão nova)</button>
       <button class="btn mudo" id="btn-exportar">Exportar lista (arquivo .json)</button>
       <button class="btn mudo" id="btn-importar">Importar lista de um arquivo</button>
@@ -556,7 +563,7 @@ grant select, insert, update, delete
 
 <script>
 /* ============ versão e tema ============ */
-const VERSAO = '2.0';
+const VERSAO = '2.1';
 document.getElementById('versao').textContent = 'v' + VERSAO;
 
 /* ---- atualizacao do app ----
@@ -641,10 +648,28 @@ const cofre = {
     try{ return localStorage.getItem(CHAVE); }catch(e){ return null; }
   },
   async gravar(txt){
-    try{ if(window.storage){ await window.storage.set(CHAVE, txt); return; } }catch(e){}
-    try{ localStorage.setItem(CHAVE, txt); }catch(e){}
+    try{ if(window.storage){ await window.storage.set(CHAVE, txt); espacoOk(true); return; } }catch(e){}
+    try{ localStorage.setItem(CHAVE, txt); espacoOk(true); }
+    catch(e){ espacoOk(false, txt.length); }
   }
 };
+/* Sem este aviso, estourar o espaco do navegador fazia tudo parar de salvar em silencio */
+let semEspaco = false;
+function espacoOk(ok, tamanho){
+  if(ok === semEspaco) return;
+  semEspaco = !ok;
+  const cx = document.getElementById('aviso-espaco');
+  if(!cx) return;
+  cx.classList.toggle('oculto', ok);
+  if(!ok){
+    document.getElementById('aviso-espaco-txt').textContent =
+      'O navegador recusou guardar a lista (' + Math.round((tamanho||0)/1024) + ' KB) — o espaço acabou. ' +
+      'Remova alguns ícones pesados no Cadastro; o resto continua salvo na nuvem.';
+  }
+}
+function tamanhoLista(){
+  try{ return Math.round(JSON.stringify(estado).length / 1024); }catch(e){ return 0; }
+}
 
 /* ============ estado ============ */
 let estado = { apps:[], destaque:[], destaqueMod:0, ordenarPorUso:false, carimbo:0 };
@@ -916,7 +941,8 @@ function abrir(app){
   if(!app.url){ irPara('cadastro'); const alvo = document.querySelector('[data-url-de="'+app.id+'"]'); if(alvo){ alvo.focus(); alvo.scrollIntoView({block:'center'}); } return; }
   /* o contador sobe sozinho; 'mod' fica reservado para edicoes de verdade,
      senao so abrir um app num aparelho sobrepoe o endereco corrigido no outro */
-  app.aberturas++; salvar(); desenhar();
+  const ficha = fichaDe(app.id) || app;
+  ficha.aberturas++; salvar(); desenhar();
   window.open(app.url, '_blank', 'noopener');
 }
 function promover(id){
@@ -1004,6 +1030,9 @@ document.getElementById('btn-processar-lote').addEventListener('click', () => {
 /* ============ ajustes ============ */
 const dlgAjustes = document.getElementById('dlg-ajustes');
 document.getElementById('btn-ajustes').addEventListener('click', () => {
+  const comIcone = ativos().filter(a => a.icone).length;
+  document.getElementById('medida-lista').textContent =
+    'Sua lista ocupa ' + tamanhoLista() + ' KB · ' + comIcone + ' de ' + ativos().length + ' apps com imagem própria.';
   document.getElementById('nuvem-url').value = nuvem.url;
   document.getElementById('nuvem-chave').value = nuvem.chave;
   dlgAjustes.showModal();
@@ -1187,6 +1216,10 @@ function brasao(app){
   return el;
 }
 /* brasão com envio de imagem, usado na tela de cadastro */
+/* a ficha certa e sempre a que esta na lista agora: entre escolher o arquivo e
+   terminar de processar a imagem, uma sincronizacao pode ter trocado os objetos */
+function fichaDe(id){ return estado.apps.find(a => a.id === id); }
+
 function brasaoEnvio(app){
   const lab = document.createElement('label');
   lab.className = 'brasao-envio';
@@ -1198,13 +1231,14 @@ function brasaoEnvio(app){
   const inp = document.createElement('input');
   inp.type = 'file'; inp.accept = 'image/*'; inp.hidden = true;
   inp.setAttribute('aria-label','Imagem de ' + app.nome);
-  inp.addEventListener('change', () => { const f = inp.files[0]; if(f) receberImagem(app, f); inp.value = ''; });
+  inp.addEventListener('change', () => { const f = inp.files[0]; if(f) receberImagem(app.id, f); inp.value = ''; });
   lab.appendChild(inp);
   return lab;
 }
 /* recorta no quadrado, reduz para 160px e guarda junto com o app */
-function receberImagem(app, arquivoImg){
+function receberImagem(id, arquivoImg){
   const leitor = new FileReader();
+  leitor.onerror = () => registrarErro('Não consegui ler esse arquivo de imagem.');
   leitor.onload = () => {
     const img = new Image();
     img.onload = () => {
@@ -1214,13 +1248,20 @@ function receberImagem(app, arquivoImg){
       const ctx = tela.getContext('2d');
       const lado = Math.min(img.width, img.height);
       ctx.drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, 0, 0, L, L);
+      /* WebP e bem menor; PNG so entra se o navegador nao gerar WebP */
       let dados = '';
       try{ dados = tela.toDataURL('image/webp', .85); }catch(e){}
-      if(!dados || dados.indexOf('image/webp') < 0) dados = tela.toDataURL('image/png');
-      app.icone = dados; app.mod = Date.now();
+      if(!dados || dados.indexOf('image/webp') < 0){
+        try{ dados = tela.toDataURL('image/png'); }catch(e){}
+      }
+      if(!dados){ registrarErro('Não consegui converter essa imagem.'); return; }
+      const ficha = fichaDe(id);
+      if(!ficha){ registrarErro('Esse app não está mais na lista.'); return; }
+      ficha.icone = dados; ficha.mod = Date.now();
+      try{ if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }catch(e){}
       salvar(); desenhar();
     };
-    img.onerror = () => alert('Não consegui ler essa imagem. Tente um arquivo PNG, JPG ou SVG.');
+    img.onerror = () => registrarErro('Não consegui abrir essa imagem. Tente um arquivo PNG, JPG ou WebP.');
     img.src = leitor.result;
   };
   leitor.readAsDataURL(arquivoImg);
@@ -1425,7 +1466,10 @@ function desenharLivro(){
     }else{
       acoes.appendChild(botao('&#9650;','Pôr em destaque', () => promover(app.id)));
     }
-    if(app.icone) acoes.appendChild(botao('&#8856;','Remover a imagem enviada', () => { app.icone = ''; app.mod = Date.now(); salvar(); desenhar(); }));
+    if(app.icone) acoes.appendChild(botao('&#8856;','Remover a imagem enviada', () => {
+      const f = fichaDe(app.id); if(!f) return;
+      f.icone = ''; f.mod = Date.now(); salvar(); desenhar();
+    }));
     acoes.appendChild(botao('&#8599;','Abrir', () => abrir(app)));
     acoes.appendChild(botao('&#10005;','Remover do cadastro', () => {
       if(confirm('Remover "' + app.nome + '" do cadastro?')) remover(app.id);
