@@ -196,6 +196,9 @@ body::after{
 }
 .ligacao:hover{color:var(--ouro-2);border-bottom-color:rgba(var(--ouro-rgb),.5)}
 .ligacao[aria-pressed="true"]{color:var(--ouro-2);border-bottom-color:var(--ouro)}
+.ordem-rotulo{font-family:var(--sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(var(--frio-rgb),.85);margin-left:10px}
+.ordem-sel{font-family:var(--sans);font-size:13px;color:var(--ouro-2);background:transparent;border:1px solid rgba(var(--ouro-rgb),.45);border-radius:8px;padding:5px 8px;cursor:pointer}
+.ordem-sel option{color:#111;background:#fff}
 
 /* ---------- placas ---------- */
 .grade{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
@@ -438,7 +441,13 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
         <h2>A biblioteca</h2><span class="regua"></span>
         <div class="controles">
           <button class="ligacao" id="btn-visao" aria-pressed="false">Ver tudo em grade</button>
-          <button class="ligacao" id="btn-ordenar" aria-pressed="false">Ordenar pelos mais abertos</button>
+          <label class="ordem-rotulo" for="sel-ordem">Ordem</label>
+          <select class="ordem-sel" id="sel-ordem" aria-label="Ordem da biblioteca">
+            <option value="alfa">A a Z</option>
+            <option value="novos">Mais novos primeiro</option>
+            <option value="antigos">Mais antigos primeiro</option>
+            <option value="uso">Mais abertos</option>
+          </select>
         </div>
       </div>
       <div class="trilho-caixa" id="trilho-caixa">
@@ -586,7 +595,7 @@ select id, jsonb_array_length(dados-&gt;'apps') as apps, carimbo from public.por
 
 <script>
 /* ============ versão e tema ============ */
-const VERSAO = '2.2';
+const VERSAO = '2.3';
 document.getElementById('versao').textContent = 'v' + VERSAO;
 
 /* ---- atualizacao do app ----
@@ -715,9 +724,26 @@ function urlLocal(url){
 const romano = i => ['I','II','III','IV'][i] || '';
 const achar = id => estado.apps.find(a => a.id === id && !a.removido);
 const destacados = () => estado.destaque.map(achar).filter(Boolean);
+/* ---- ordem da biblioteca (v2.3) ----
+   A escolha fica guardada em cada aparelho. "Data" = quando o app foi cadastrado
+   no Pórtico: o código de cada app (id) carrega essa data. */
+const CHAVE_ORDEM = 'portico:ordem';
+let ordem = 'alfa';
+try{ ordem = localStorage.getItem(CHAVE_ORDEM) || (estado.ordenarPorUso ? 'uso' : 'alfa'); }catch(e){}
+function dataCadastro(a, i){
+  const t = /^a([0-9a-z]+)[0-9a-z]{4}$/.test(a.id || '') ? parseInt(a.id.slice(1, -4), 36) : NaN;
+  return (t > 1.5e12 && t < 4e12) ? t : i;   /* códigos antigos sem data: vale a posição no cadastro */
+}
 function guardados(){
-  let l = ativos().filter(a => !estado.destaque.includes(a.id));
-  if(estado.ordenarPorUso) l.sort((a,b) => b.aberturas - a.aberturas || a.nome.localeCompare(b.nome,'pt-BR'));
+  const todos = ativos();
+  const pos = new Map(todos.map((a, i) => [a.id, i]));
+  const alfa = (a,b) => a.nome.localeCompare(b.nome, 'pt-BR', {sensitivity:'base'});
+  const data = a => dataCadastro(a, pos.get(a.id));
+  let l = todos.filter(a => !estado.destaque.includes(a.id));
+  if(ordem === 'uso') l.sort((a,b) => b.aberturas - a.aberturas || alfa(a,b));
+  else if(ordem === 'novos') l.sort((a,b) => data(b) - data(a) || alfa(a,b));
+  else if(ordem === 'antigos') l.sort((a,b) => data(a) - data(b) || alfa(a,b));
+  else l.sort(alfa);
   return l;
 }
 function passaFiltro(a){
@@ -1214,12 +1240,13 @@ btnVisao.addEventListener('click', () => aplicarVisao(!emGrade));
   aplicarVisao(v === 'grade');
 })();
 
-const btnOrdenar = document.getElementById('btn-ordenar');
-btnOrdenar.addEventListener('click', () => {
-  estado.ordenarPorUso = !estado.ordenarPorUso;
-  btnOrdenar.setAttribute('aria-pressed', String(estado.ordenarPorUso));
-  btnOrdenar.textContent = estado.ordenarPorUso ? 'Ordenar pelo cadastro' : 'Ordenar pelos mais abertos';
-  salvar(); desenhar();
+const selOrdem = document.getElementById('sel-ordem');
+selOrdem.value = ordem;
+selOrdem.addEventListener('change', () => {
+  ordem = selOrdem.value;
+  try{ localStorage.setItem(CHAVE_ORDEM, ordem); }catch(e){}
+  desenhar();
+  const t = document.getElementById('trilho'); if(t) t.scrollLeft = 0;
 });
 
 /* ============ desenho ============ */
