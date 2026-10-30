@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<script src="porteiro.js" data-app="Pórtico" data-protege="https://ghjbljypxksubmcsvaig.supabase.co/rest/v1/portico_estado"></script>
 <style>
 :root{
   color-scheme:dark;
@@ -524,33 +525,55 @@ dialog::backdrop{background:rgba(6,12,22,.78);backdrop-filter:blur(3px)}
         <button class="btn solido" id="btn-conectar">Ligar e enviar</button>
       </div>
       <pre class="erro-nuvem oculto" id="erro-nuvem"></pre>
-      <details class="sql" open>
-        <summary>Tabela exigida no Supabase (rode uma vez)</summary>
-        <p>Abra o SQL Editor do seu projeto e rode este comando. Sem essa tabela, a sincronização acusa falha:</p>
-        <pre id="sql-texto">create table if not exists portico_estado (
+      <details class="sql">
+        <summary>Tabela exigida no Supabase (já está criada e protegida)</summary>
+        <p>Só é preciso rodar de novo se a tabela for apagada. A lista só abre com o seu login.</p>
+        <pre id="sql-texto">-- ============================================================
+-- PÓRTICO — Segurança da lista de apps (versão 2)
+--
+-- O que muda: a tabela portico_estado deixa de ser aberta a
+-- qualquer pessoa. Só o login do Bispo (função eh_dono, criada
+-- pelo script das Despesas) lê e grava a lista.
+--
+-- Cole no SQL Editor do Supabase e clique em RUN. Pode rodar de novo.
+-- A lista atual de apps é mantida.
+-- ============================================================
+create table if not exists public.portico_estado (
   id text primary key,
   dados jsonb not null,
   carimbo bigint not null default 0
 );
 
-alter table portico_estado enable row level security;
+alter table public.portico_estado enable row level security;
 
-drop policy if exists "portico_acesso" on portico_estado;
+do $$
+declare p record;
+begin
+  for p in select policyname from pg_policies
+           where schemaname = 'public' and tablename = 'portico_estado'
+  loop
+    execute format('drop policy %I on public.portico_estado', p.policyname);
+  end loop;
+end $$;
 
-create policy "portico_acesso" on portico_estado
-  for all to anon, authenticated
-  using (true) with check (true);
+revoke all on public.portico_estado from anon, authenticated;
+grant select, insert, update, delete on public.portico_estado to authenticated;
 
-grant select, insert, update, delete
-  on portico_estado to anon, authenticated;</pre>
+create policy "portico_dono" on public.portico_estado
+  for all to authenticated
+  using (public.eh_dono()) with check (public.eh_dono());
+
+-- Conferência: deve mostrar a linha "principal" com a sua lista
+select id, jsonb_array_length(dados-&gt;'apps') as apps, carimbo from public.portico_estado;</pre>
         <button class="btn mudo" id="btn-copiar-sql" style="margin-top:10px">Copiar SQL</button>
-        <p class="obs">Essa política deixa quem tiver a chave anon ler e gravar a tabela. Como aqui só ficam nomes e endereços dos seus apps, é um risco pequeno — mas não guarde nada sigiloso nela.</p>
+        <p class="obs">Desde a versão 2.2, só o seu login (e-mail e senha) lê e grava esta lista. Ninguém mais consegue ver nem alterar os seus apps.</p>
       </details>
     </div>
 
     <div class="lista-ajustes">
       <p class="medida" id="medida-lista"></p>
       <button class="btn mudo" id="btn-atualizar-app">Atualizar o app (buscar versão nova)</button>
+      <button class="btn mudo" id="btn-sair-conta" onclick="porteiroSair()">Sair da conta (pede o login de novo)</button>
       <button class="btn mudo" id="btn-exportar">Exportar lista (arquivo .json)</button>
       <button class="btn mudo" id="btn-importar">Importar lista de um arquivo</button>
       <button class="btn mudo perigo" id="btn-limpar">Apagar tudo e recomeçar</button>
@@ -563,7 +586,7 @@ grant select, insert, update, delete
 
 <script>
 /* ============ versão e tema ============ */
-const VERSAO = '2.1';
+const VERSAO = '2.2';
 document.getElementById('versao').textContent = 'v' + VERSAO;
 
 /* ---- atualizacao do app ----
